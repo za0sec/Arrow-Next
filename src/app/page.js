@@ -108,6 +108,36 @@ export default function Home() {
           </p>
         </a>
       </div>
+
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="max-w-sm rounded overflow-hidden shadow-lg">
+          <img className="w-full" src="https://via.placeholder.com/150" alt="Heart Disease" />
+          <div className="px-6 py-4">
+            <div className="font-bold text-xl mb-2">Heart Disease</div>
+            <p className="text-gray-700 text-base">
+              Heart disease describes a range of conditions that affect your heart.
+            </p>
+          </div>
+        </div>
+        <div className="max-w-sm rounded overflow-hidden shadow-lg">
+          <img className="w-full" src="https://via.placeholder.com/150" alt="Diabetes" />
+          <div className="px-6 py-4">
+            <div className="font-bold text-xl mb-2">Diabetes</div>
+            <p className="text-gray-700 text-base">
+              Diabetes is a disease that occurs when your blood glucose is too high.
+            </p>
+          </div>
+        </div>
+        <div className="max-w-sm rounded overflow-hidden shadow-lg">
+          <img className="w-full" src="https://via.placeholder.com/150" alt="Asthma" />
+          <div className="px-6 py-4">
+            <div className="font-bold text-xl mb-2">Asthma</div>
+            <p className="text-gray-700 text-base">
+              Asthma is a condition in which your airways narrow and swell and may produce extra mucus.
+            </p>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
