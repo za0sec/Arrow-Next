@@ -1,0 +1,206 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.custom-screen {
+    @apply max-w-screen-xl mx-auto px-4 md:px-8;
+}
+
+.custom-btn-bg {
+    background: radial-gradient(67.5% 67.5% at 50% 50%, #4B5563 0%, rgba(75, 85, 99, 0) 100%)
+}
+
+.custom-btn-bg:hover {
+    background: radial-gradient(118.75% 118.75% at 50% 50%, #4B5563 0%, rgba(75, 85, 99, 0) 100%);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes slide-in-from-top {
+    from {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes move-down {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(50px); /* Ajusta el valor según el tamaño de tus elementos */
+    }
+}
+
+.slide-in-from-top {
+    animation: slide-in-from-top 0.5s ease forwards;
+}
+
+.move-down {
+    animation: move-down 0.5s ease forwards;
+}
+
+/* Añade esta clase en tu archivo CSS global o en un componente de estilo */
+.underline-animation {
+    position: relative;
+}
+
+.underline-animation::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    display: block;
+    margin-top: 5px;
+    right: 0;
+    background: #ffffff; /* O el color que desees */
+    transition: width 0.5s ease, left 0.3s ease;
+}
+
+.underline-animation:hover::after {
+    width: 100%;
+    left: 0;
+}
+
+/* custom-calendar-styles.css */
+
+/* Cambia el color de las líneas que separan los días */
+.rbc-month-view {
+    border: 1px solid #333; /* Color del borde alrededor del calendario */
+}
+
+
+.rbc-header {
+    border: 1px solid #333 !important; /* Color del borde de los encabezados */
+}
+
+.rbc-month-header {
+    border-radius: 7px 7px 7px 7px !important;
+
+}
+
+/* Opcional: Ajustar el color de las líneas internas */
+.rbc-today {
+    background-color: transparent !important; /* Fondo transparente para el día actual */
+    border: 1px solid #333 !important; /* Color del borde del día actual */
+}
+
+/* Cambia el color de las líneas que separan los días */
+.rbc-month-view, .rbc-header, .rbc-day-bg, .rbc-date-cell, .rbc-row, .rbc-row-content {
+    border-color: #333 !important; /* Cambia #333 al color que desees para las líneas */
+}
+
+/* Cambia el color de las líneas internas del calendario */
+.rbc-today {
+    background-color: transparent !important; /* Fondo transparente para el día actual */
+    border: 1px solid #333 !important; /* Cambia #333 al color que desees para las líneas del día actual */
+}
+
+.rbc-header, .rbc-day-bg, .rbc-date-cell {
+    border-right: 1px solid #333 !important; /* Cambia #333 al color que desees para las líneas verticales */
+}
+
+.rbc-month-row {
+    border-bottom: 1px solid #333 !important;
+    border-top: 0px solid #333 !important;
+    border-radius: 0px !important;
+}
+
+.rbc-btn-group{
+    background-color: transparent;
+    border: #333333;
+}
+
+.rbc-toolbar button {
+    margin-left: 5px !important;
+    background-color: #015498 !important;
+    border: 1px solid #333 !important;
+    color: #fff !important;
+}
+
+.rbc-toolbar button:hover {
+    background-color: #00b5ee !important;
+}
+
+.underline-animation-link {
+    position: relative;
+}
+
+.underline-animation-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 1px;
+    display: block;
+    margin-top: -2px;
+    right: 0;
+    background: #00c2ff; /* O el color que desees */
+    transition: width 0.2s ease, left 0.2s ease;
+}
+
+.underline-animation-link:hover::after {
+    width: 100%;
+    left: 0;
+}
+
+/* Estilos para el dropdown de Google Places */
+.pac-container {
+    background-color: #1f2937 !important;  /* Fondo oscuro para el dropdown */
+    color: #9ca3af;  /* Texto en blanco */
+}
+.pac-container .pac-item {
+    background-color: #1f2937 !important;  /* Fondo oscuro para cada ítem */
+    color: #9ca3af !important;  /* Texto en blanco para cada ítem */
+}
+
+.pac-container .pac-item:hover {
+    background-color: #2f4367 !important;  /* Fondo más claro al pasar el mouse */
+}
+
+.pac-container .pac-item .pac-icon,
+.pac-container .pac-item .pac-item-query {
+    color: #9ca3af !important;  /* Color blanco para iconos y texto destacado */
+}
+
+.pac-container .pac-matched {
+    font-weight: bold;
+    color: #00b5ee !important;  /* Color gris claro para texto coincidente */
+}
+
+.react-datepicker {
+    background-color: #1f2937 !important;
+    color: #333 !important;
+    border: 1px solid #333 !important;
+}
+
+.react-datepicker__day-name, .react-datepicker__day, .react-datepicker__time-name {
+    color: #fff !important;
+}
+
+.react-datepicker__header {
+    background-color: #304453 !important;
+}
+
+.react-datepicker__day:hover,
+.react-datepicker__month-text:hover,
+.react-datepicker__quarter-text:hover,
+.react-datepicker__year-text:hover {
+    background-color: #216ba5 !important;
+}
