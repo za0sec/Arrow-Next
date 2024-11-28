@@ -1,11 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import DashboardNavbar from './components/DashboardNavbar';
-import { authenticate, fetchWithToken } from "./utils/auth";
-import cookie from 'cookie';
-import Cookies from "js-cookie";
-import config from "@/pages/utils/config";
-import apiClient from "@/pages/utils/apiClient";
+import DashboardNavbar from '../components/DashboardNavbar';
+import apiClient from "@/utils/apiClient";
 import DatePicker from "react-datepicker";
 import 'react-datepicker/dist/react-datepicker.css';
 import { FaChevronDown } from "react-icons/fa";

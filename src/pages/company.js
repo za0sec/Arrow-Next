@@ -1,8 +1,8 @@
 import { useState, useEffect, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useRouter } from 'next/router';
-import apiClient from "@/pages/utils/apiClient";
-import DashboardNavbar from '@/pages/components/DashboardNavbar';
+import apiClient from "@/utils/apiClient";
+import DashboardNavbar from '@/components/DashboardNavbar';
 
 export default function CompaniesPage() {
     const [companies, setCompanies] = useState([]);

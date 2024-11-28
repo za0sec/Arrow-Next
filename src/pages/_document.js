@@ -1,5 +1,5 @@
 import { Html, Head, Main, NextScript } from 'next/document';
-import config from '@/pages/utils/config'; // Asegúrate de importar correctamente la configuración
+import config from '@/utils/config'; // Asegúrate de importar correctamente la configuración
 
 export default function Document() {
     return (

@@ -1,4 +1,4 @@
-import apiClient from "@/pages/utils/apiClient";
+import apiClient from "@/utils/apiClient";
 
 export const authenticate = async (accessToken) => {
     if (!accessToken) {

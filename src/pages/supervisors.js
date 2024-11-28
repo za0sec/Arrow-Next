@@ -2,10 +2,10 @@ import { useState, Fragment, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { useRouter } from 'next/router';
 import Cookies from "js-cookie";
-import { authenticate, fetchWithToken } from "@/pages/utils/auth";
-import DashboardNavbar from "@/pages/components/DashboardNavbar";
-import config from "@/pages/utils/config";
-import apiClient from "@/pages/utils/apiClient";
+import { authenticate, fetchWithToken } from "@/utils/auth";
+import DashboardNavbar from "@/components/DashboardNavbar";
+import config from "@/utils/config";
+import apiClient from "@/utils/apiClient";
 
 export default function SupervisorsPage() {
     const [supervisors, setSupervisors] = useState([]);

@@ -3,9 +3,7 @@ import { useRouter } from 'next/router';
 import { Dialog, Transition } from '@headlessui/react';
 
 import Cookies from 'js-cookie';
-import crypto from "crypto";
-import config from "@/pages/utils/config";
-import apiClient from "@/pages/utils/apiClient";
+import apiClient from "@/utils/apiClient";
 
 export default function LoginModal({ isOpen, closeModal }) {
     const router = useRouter();

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import Navbar from './components/Navbar';
-import HeroSection from './components/HeroSection';
-import CountersSection from './components/CountersSection';
-import LoginModal from "./components/LoginModal";
+import Navbar from '../components/Navbar';
+import HeroSection from '../components/HeroSection';
+import CountersSection from '../components/CountersSection';
+import LoginModal from "@/components/LoginModal";
 import {useRouter} from "next/router";
-import {authenticate, checkToken, fetchWithToken} from "./utils/auth";
-import config from "../pages/utils/config";
+import {authenticate, checkToken, fetchWithToken} from "@/utils/auth";
+import config from "@/utils/config";
 import Cookies from "js-cookie";
-import apiClient from "@/pages/utils/apiClient";
+import apiClient from "@/utils/apiClient";
 
 export default function Home({token = true}) {
     const router = useRouter();

@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react';
 import { useRouter } from 'next/router';
-import config from "@/pages/utils/config";
-import apiClient from "@/pages/utils/apiClient";
+import config from "@/utils/config";
+import apiClient from "@/utils/apiClient";
 
 export default function ResetPassword() {
     const router = useRouter();

@@ -2,10 +2,10 @@ import {useEffect, useState} from 'react';
 import Image from 'next/image';
 import cookie from 'cookie';
 import Cookies from "js-cookie";
-import DashboardNavbar from "./components/DashboardNavbar";
-import config from "@/pages/utils/config";
-import {authenticate, checkToken, fetchWithToken} from "@/pages/utils/auth";
-import apiClient from "@/pages/utils/apiClient";
+import DashboardNavbar from "../components/DashboardNavbar";
+import config from "@/utils/config";
+import {authenticate, checkToken, fetchWithToken} from "@/utils/auth";
+import apiClient from "@/utils/apiClient";
 import {useRouter} from "next/router";
 
 export default function Profile() {

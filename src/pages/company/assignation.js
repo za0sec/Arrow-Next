@@ -1,34 +1,37 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import apiClient from "@/pages/utils/apiClient";
-import DashboardNavbar from '@/pages/components/DashboardNavbar';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import apiClient from "@/utils/apiClient";
+import DashboardNavbar from "@/components/DashboardNavbar";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Assignation() {
-    const [user, setUser] = useState('');
+    const [user, setUser] = useState("");
     const [branches, setBranches] = useState([]);
     const [supervisors, setSupervisors] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const [assigning, setAssigning] = useState(false);
+    const [error, setError] = useState("");
     const router = useRouter();
     const { companyId } = router.query;
 
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await apiClient.get('/user/profile');
+                const response = await apiClient.get("/user/profile");
 
                 if (response.status === 200) {
                     setUser(response.data);
                 } else if (response.status === 401) {
-                    router.push('/');
+                    router.push("/");
                 } else {
-                    setError('Error al obtener el perfil del usuario');
+                    setError("Error al obtener el perfil del usuario");
                 }
             } catch (error) {
-                setError('Error al obtener el perfil del usuario');
-                console.error('Error en autenticación:', error);
-                router.push('/');
+                setError("Error al obtener el perfil del usuario");
+                console.error("Error en autenticación:", error);
+                router.push("/");
             } finally {
                 setLoading(false);
             }
@@ -40,21 +43,25 @@ export default function Assignation() {
     useEffect(() => {
         const fetchNotAssignedBranches = async () => {
             try {
-                const response = await apiClient.get(`/admin/company/branches/getNotAssignedBranches${companyId ? `/${companyId}` : ''}`);
+                const response = await apiClient.get(
+                    `/admin/company/branches/getNotAssignedBranches${
+                        companyId ? `/${companyId}` : ""
+                    }`
+                );
                 setBranches(response.data);
             } catch (error) {
-                setError('Error al obtener las sucursales no asignadas.');
-                console.error('Error fetching branches:', error);
+                setError("Error al obtener las sucursales no asignadas.");
+                console.error("Error fetching branches:", error);
             }
         };
 
         const fetchSupervisors = async () => {
             try {
-                const response = await apiClient.get('/admin/supervisors/all');
+                const response = await apiClient.get("/admin/supervisors/all");
                 setSupervisors(response.data);
             } catch (error) {
-                setError('Error al obtener los supervisores.');
-                console.error('Error fetching supervisors:', error);
+                setError("Error al obtener los supervisores.");
+                console.error("Error fetching supervisors:", error);
             }
         };
 
@@ -63,13 +70,15 @@ export default function Assignation() {
         setLoading(false);
     }, [companyId]);
 
-
     const onDragEnd = (result) => {
         const { destination, source, draggableId } = result;
 
         if (!destination) return;
 
-        if (destination.droppableId === source.droppableId && destination.index === source.index) {
+        if (
+            destination.droppableId === source.droppableId &&
+            destination.index === source.index
+        ) {
             return;
         }
 
@@ -77,7 +86,7 @@ export default function Assignation() {
 
         if (source.droppableId === destination.droppableId) {
             // Reordenar dentro del mismo supervisor o dentro de 'branches'
-            const updatedSupervisors = supervisors.map(supervisor => {
+            const updatedSupervisors = supervisors.map((supervisor) => {
                 if (supervisor.id.toString() === source.droppableId) {
                     const newBranches = Array.from(supervisor.branches);
                     const [movedBranch] = newBranches.splice(source.index, 1);
@@ -93,9 +102,11 @@ export default function Assignation() {
             return;
         }
 
-        if (source.droppableId === 'branches') {
-            const movedBranch = branches.find(branch => branch.id === branchId);
-            const updatedSupervisors = supervisors.map(supervisor => {
+        if (source.droppableId === "branches") {
+            const movedBranch = branches.find(
+                (branch) => branch.id === branchId
+            );
+            const updatedSupervisors = supervisors.map((supervisor) => {
                 if (supervisor.id === parseInt(destination.droppableId)) {
                     return {
                         ...supervisor,
@@ -105,31 +116,49 @@ export default function Assignation() {
                 return supervisor;
             });
 
-            setBranches(branches.filter(branch => branch.id !== branchId));
+            setBranches(branches.filter((branch) => branch.id !== branchId));
             setSupervisors(updatedSupervisors);
-        } else if (destination.droppableId === 'branches') {
-            const sourceSupervisor = supervisors.find(supervisor => supervisor.id === parseInt(source.droppableId));
-            const movedBranch = sourceSupervisor.branches.find(branch => branch.id === branchId);
+        } else if (destination.droppableId === "branches") {
+            const sourceSupervisor = supervisors.find(
+                (supervisor) => supervisor.id === parseInt(source.droppableId)
+            );
+            const movedBranch = sourceSupervisor.branches.find(
+                (branch) => branch.id === branchId
+            );
 
             const updatedSourceSupervisor = {
                 ...sourceSupervisor,
-                branches: sourceSupervisor.branches.filter(branch => branch.id !== branchId),
+                branches: sourceSupervisor.branches.filter(
+                    (branch) => branch.id !== branchId
+                ),
             };
 
             setBranches([...branches, movedBranch]);
-            setSupervisors(supervisors.map(supervisor => {
-                if (supervisor.id === updatedSourceSupervisor.id) return updatedSourceSupervisor;
-                return supervisor;
-            }));
+            setSupervisors(
+                supervisors.map((supervisor) => {
+                    if (supervisor.id === updatedSourceSupervisor.id)
+                        return updatedSourceSupervisor;
+                    return supervisor;
+                })
+            );
         } else {
-            const sourceSupervisor = supervisors.find(supervisor => supervisor.id === parseInt(source.droppableId));
-            const destinationSupervisor = supervisors.find(supervisor => supervisor.id === parseInt(destination.droppableId));
+            const sourceSupervisor = supervisors.find(
+                (supervisor) => supervisor.id === parseInt(source.droppableId)
+            );
+            const destinationSupervisor = supervisors.find(
+                (supervisor) =>
+                    supervisor.id === parseInt(destination.droppableId)
+            );
 
-            const movedBranch = sourceSupervisor.branches.find(branch => branch.id === branchId);
+            const movedBranch = sourceSupervisor.branches.find(
+                (branch) => branch.id === branchId
+            );
 
             const updatedSourceSupervisor = {
                 ...sourceSupervisor,
-                branches: sourceSupervisor.branches.filter(branch => branch.id !== branchId),
+                branches: sourceSupervisor.branches.filter(
+                    (branch) => branch.id !== branchId
+                ),
             };
 
             const updatedDestinationSupervisor = {
@@ -137,30 +166,54 @@ export default function Assignation() {
                 branches: [...destinationSupervisor.branches, movedBranch],
             };
 
-            setSupervisors(supervisors.map(supervisor => {
-                if (supervisor.id === updatedSourceSupervisor.id) return updatedSourceSupervisor;
-                if (supervisor.id === updatedDestinationSupervisor.id) return updatedDestinationSupervisor;
-                return supervisor;
-            }));
+            setSupervisors(
+                supervisors.map((supervisor) => {
+                    if (supervisor.id === updatedSourceSupervisor.id)
+                        return updatedSourceSupervisor;
+                    if (supervisor.id === updatedDestinationSupervisor.id)
+                        return updatedDestinationSupervisor;
+                    return supervisor;
+                })
+            );
         }
     };
 
-
-
-
-
     const handleAssign = async () => {
+        setAssigning(true);
         try {
-            await Promise.all(supervisors.map(supervisor =>
-                apiClient.post('/admin/supervisor/company/branches/assign', {
+            const payload = {
+                supervisors: supervisors.map((supervisor) => ({
                     id: supervisor.id,
-                    branches: supervisor.branches.map(branch => branch.id)
-                })
-            ));
-            alert('Asignaciones realizadas con éxito');
+                    branches: supervisor.branches.map((branch) => branch.id),
+                })),
+            };
+
+            await apiClient.post(
+                "/admin/supervisor/company/branches/assign",
+                payload
+            );
+            toast.success("Asignaciones realizadas con éxito", {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
         } catch (error) {
-            console.error('Error during assignment:', error);
-            alert('Hubo un error al realizar las asignaciones.');
+            console.error("Error during assignment:", error);
+            toast.error("Hubo un error al realizar las asignaciones.", {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+        } finally {
+            setAssigning(false);
         }
     };
 
@@ -176,7 +229,9 @@ export default function Assignation() {
         <div className="bg-gray-900 min-h-screen flex flex-col">
             <DashboardNavbar user={user} />
             <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 mt-16">
-                <h1 className="text-4xl font-bold text-white mb-6">Asignación de Sucursales a Supervisores</h1>
+                <h1 className="text-4xl font-bold text-white mb-6">
+                    Asignación de Sucursales a Supervisores
+                </h1>
                 <DragDropContext onDragEnd={onDragEnd}>
                     <div className="grid grid-cols-2 gap-4">
                         {/* Column for Unassigned Branches */}
@@ -185,18 +240,21 @@ export default function Assignation() {
                                 <div
                                     {...provided.droppableProps}
                                     ref={provided.innerRef}
-                                    className="bg-gray-800 p-4 rounded-lg shadow-lg"
-                                >
-                                    <h2 className="text-2xl font-bold text-white mb-4">Sucursales No Asignadas</h2>
+                                    className="bg-gray-800 p-4 rounded-lg shadow-lg">
+                                    <h2 className="text-2xl font-bold text-white mb-4">
+                                        Sucursales No Asignadas
+                                    </h2>
                                     {branches.map((branch, index) => (
-                                        <Draggable key={branch.id} draggableId={branch.id.toString()} index={index}>
+                                        <Draggable
+                                            key={branch.id}
+                                            draggableId={branch.id.toString()}
+                                            index={index}>
                                             {(provided) => (
                                                 <div
                                                     ref={provided.innerRef}
                                                     {...provided.draggableProps}
                                                     {...provided.dragHandleProps}
-                                                    className="bg-gray-700 p-2 rounded-md text-white mb-2"
-                                                >
+                                                    className="bg-gray-700 p-2 rounded-md text-white mb-2">
                                                     {branch.name}
                                                 </div>
                                             )}
@@ -209,31 +267,42 @@ export default function Assignation() {
 
                         {/* Column for Supervisors */}
                         <div className="bg-gray-800 p-4 rounded-lg shadow-lg">
-                            <h2 className="text-2xl font-bold text-white mb-4">Supervisores</h2>
+                            <h2 className="text-2xl font-bold text-white mb-4">
+                                Supervisores
+                            </h2>
                             {supervisors.map((supervisor) => (
-                                <Droppable key={supervisor.id} droppableId={supervisor.id.toString()}>
+                                <Droppable
+                                    key={supervisor.id}
+                                    droppableId={supervisor.id.toString()}>
                                     {(provided) => (
                                         <div
                                             {...provided.droppableProps}
                                             ref={provided.innerRef}
-                                            className="bg-gray-700 p-2 rounded-md text-white mb-4"
-                                        >
+                                            className="bg-gray-700 p-2 rounded-md text-white mb-4">
                                             <h3 className="font-bold">{`${supervisor.firstName} ${supervisor.lastName}`}</h3>
                                             <div className="flex flex-wrap">
-                                                {supervisor.branches.map((branch, index) => (
-                                                    <Draggable key={branch.id} draggableId={branch.id.toString()} index={index}>
-                                                        {(provided) => (
-                                                            <div
-                                                                ref={provided.innerRef}
-                                                                {...provided.draggableProps}
-                                                                {...provided.dragHandleProps}
-                                                                className="bg-gray-600 p-2 m-1 rounded-md"
-                                                            >
-                                                                {branch.name}
-                                                            </div>
-                                                        )}
-                                                    </Draggable>
-                                                ))}
+                                                {supervisor.branches.map(
+                                                    (branch, index) => (
+                                                        <Draggable
+                                                            key={branch.id}
+                                                            draggableId={branch.id.toString()}
+                                                            index={index}>
+                                                            {(provided) => (
+                                                                <div
+                                                                    ref={
+                                                                        provided.innerRef
+                                                                    }
+                                                                    {...provided.draggableProps}
+                                                                    {...provided.dragHandleProps}
+                                                                    className="bg-gray-600 p-2 m-1 rounded-md">
+                                                                    {
+                                                                        branch.name
+                                                                    }
+                                                                </div>
+                                                            )}
+                                                        </Draggable>
+                                                    )
+                                                )}
                                             </div>
                                             {provided.placeholder}
                                         </div>
@@ -247,12 +316,17 @@ export default function Assignation() {
                 <div className="mt-8">
                     <button
                         onClick={handleAssign}
-                        className="bg-primary text-white py-2 px-4 rounded-md hover:bg-primary-dark"
-                    >
-                        Asignar
+                        disabled={assigning}
+                        className={`bg-primary text-white py-2 px-4 rounded-md ${
+                            assigning
+                                ? "opacity-50 cursor-not-allowed"
+                                : "hover:bg-primary-dark"
+                        }`}>
+                        {assigning ? "Asignando..." : "Asignar"}
                     </button>
                 </div>
             </main>
+            <ToastContainer />
         </div>
     );
 }
