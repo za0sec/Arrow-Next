@@ -4,10 +4,7 @@ import Link from 'next/link';
 import { Fragment } from 'react';
 
 const navigation = [
-    { name: 'Features', href: '#' },
-    { name: 'Pricing', href: '#' },
-    { name: 'About', href: '#' },
-    { name: 'Contact', href: '#' },
+
 ];
 
 export default function Navbar({ openModal }) {
