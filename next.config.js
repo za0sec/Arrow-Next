@@ -12,6 +12,7 @@ module.exports = {
 const nextConfig = {
     images: {
         domains: ['arrowconnect.arrowservicios.ar'], // Agrega tu dominio aquí
+        unoptimized: true,
     },
     output: 'export',
 };
