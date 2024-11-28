@@ -3,7 +3,7 @@ module.exports = {
         return [
             {
                 source: '/api/:path*',
-                destination: 'http://localhost:3001/api/:path*', // Proxy a tu backend
+                destination: 'https://api.arrowservicios.ar/:path*', // Proxy a tu backend
             },
         ];
     },
@@ -13,6 +13,7 @@ const nextConfig = {
     images: {
         domains: ['arrowconnect.arrowservicios.ar'], // Agrega tu dominio aquí
     },
+    output: 'export',
 };
 
 module.exports = nextConfig;
