@@ -1,5 +1,5 @@
 const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-const googleApiKey = process.env.GOOGLE_MAPS_API_KEY;
+const googleApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 const darkMapStyle = [
     {
@@ -215,9 +215,10 @@ const darkMapStyle = [
     }
 ];
 
-
-export default {
+const config = {
+    googleApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
     apiUrl,
-    googleApiKey,
     darkMapStyle
 };
+
+export default config;

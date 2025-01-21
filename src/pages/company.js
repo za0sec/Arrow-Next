@@ -9,7 +9,15 @@ export default function CompaniesPage() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleteConfirmDialogOpen, setIsDeleteConfirmDialogOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
-    const [currentCompany, setCurrentCompany] = useState({ id: '', name: '', address: '', density: '', frequency: '' });
+    const [currentCompany, setCurrentCompany] = useState({ 
+        id: '', 
+        name: '', 
+        address: '', 
+        latitude: '', 
+        longitude: '',
+        density: '', 
+        frequency: '' 
+    });
     const [companyToDelete, setCompanyToDelete] = useState(null);
     const [user, setUser] = useState('');
     const [loading, setLoading] = useState(true);
@@ -66,18 +74,64 @@ export default function CompaniesPage() {
     };
 
     const handleSave = async () => {
-        const url = isEditMode ? '/admin/company/update' : '/admin/company/add';
-        const payload = isEditMode
-            ? { id: currentCompany.id, name: currentCompany.name }
-            : { name: currentCompany.name };
-
         try {
+            if (!window.google || !window.google.maps) {
+                throw new Error('Google Maps no está cargado correctamente');
+            }
+
+            const geocoder = new window.google.maps.Geocoder();
+            const fullAddress = currentCompany.address;
+
+            const result = await new Promise((resolve, reject) => {
+                geocoder.geocode(
+                    {
+                        address: fullAddress,
+                        componentRestrictions: {
+                            country: 'AR'
+                        }
+                    },
+                    (results, status) => {
+                        if (status === 'OK' && results && results.length > 0) {
+                            const isInArgentina = results[0].address_components.some(
+                                component => 
+                                    component.types.includes('country') && 
+                                    component.short_name === 'AR'
+                            );
+
+                            if (isInArgentina) {
+                                resolve(results[0]);
+                            } else {
+                                reject(new Error('La dirección debe estar en Argentina'));
+                            }
+                        } else {
+                            reject(new Error(`No se pudo encontrar la dirección. Por favor, verifica que sea correcta.`));
+                        }
+                    }
+                );
+            });
+
+            console.log('Geocoding result:', {
+                formatted_address: result.formatted_address,
+                lat: result.geometry.location.lat(),
+                lng: result.geometry.location.lng()
+            });
+
+            const payload = {
+                ...currentCompany,
+                address: result.formatted_address,
+                latitude: result.geometry.location.lat(),
+                longitude: result.geometry.location.lng()
+            };
+
+            const url = isEditMode ? '/admin/company/update' : '/admin/company/add';
             await apiClient.post(url, payload);
+            
             const response = await apiClient.get('/admin/companies/all');
             setCompanies(response.data);
             closeDialog();
         } catch (error) {
             console.error('Error saving company:', error);
+            alert(error.message || 'Error al guardar la empresa. Por favor verifica la dirección.');
         }
     };
 
