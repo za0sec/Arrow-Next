@@ -5,12 +5,15 @@ import DashboardNavbar from "../components/DashboardNavbar";
 import {authenticate, fetchWithToken} from "@/utils/auth";
 import config from "@/utils/config";
 import apiClient from "@/utils/apiClient";
+import PasswordStrengthMeter from '@/components/PasswordStrengthMeter';
+import PasswordInput from "@/components/PasswordInput";
 
 export default function ChangePassword() {
     const router = useRouter();
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
+    const [passwordsMatch, setPasswordsMatch] = useState(true);
     const [success, setSuccess] = useState('');
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -40,8 +43,34 @@ export default function ChangePassword() {
         fetchUser();
     }, [router]);
 
+    // Verificar coincidencia de contraseñas en tiempo real
+    useEffect(() => {
+        if (confirmNewPassword) {
+            setPasswordsMatch(newPassword === confirmNewPassword);
+        } else {
+            setPasswordsMatch(true);
+        }
+    }, [newPassword, confirmNewPassword]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Verificar que la contraseña cumple con los requisitos mínimos
+        if (newPassword.length < 8) {
+            setError('La contraseña debe tener al menos 8 caracteres');
+            return;
+        }
+        
+        // Verificar que la contraseña contiene los caracteres requeridos
+        const hasNumber = /\d/.test(newPassword);
+        const hasLower = /[a-z]/.test(newPassword);
+        const hasUpper = /[A-Z]/.test(newPassword);
+        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+
+        if (!hasNumber || !hasLower || !hasUpper || !hasSpecial) {
+            setError('La contraseña no cumple con los requisitos de seguridad');
+            return;
+        }
 
         if (newPassword !== confirmNewPassword) {
             setError('Las contraseñas nuevas no coinciden');
@@ -67,11 +96,24 @@ export default function ChangePassword() {
     };
 
     if (loading) {
-        return <div>Cargando...</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-900">
+                <div className="text-white text-xl">Cargando...</div>
+            </div>
+        );
     }
 
     if (error) {
-        return <div>Error: {error}</div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-900">
+                <div className="bg-gray-800 p-8 rounded-lg shadow-lg">
+                    <div className="text-red-500 text-center">
+                        <p className="text-xl">Error</p>
+                        <p className="mt-2">{error}</p>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
 
@@ -83,36 +125,29 @@ export default function ChangePassword() {
                     <h1 className="text-3xl font-bold mb-6 text-center text-primary">Cambiar Contraseña</h1>
                     <form onSubmit={handleSubmit}>
                         <div className="mb-4">
-                            <label className="block text-gray-300" htmlFor="currentPassword">Contraseña Actual</label>
-                            <input
-                                type="password"
+                            <PasswordInput
                                 id="currentPassword"
+                                label="Contraseña Actual"
                                 value={currentPassword}
                                 onChange={(e) => setCurrentPassword(e.target.value)}
-                                className="w-full px-4 py-2 mt-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary"
-                                required
                             />
                         </div>
                         <div className="mb-4">
-                            <label className="block text-gray-300" htmlFor="newPassword">Nueva Contraseña</label>
-                            <input
-                                type="password"
+                            <PasswordInput
                                 id="newPassword"
+                                label="Nueva Contraseña"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
-                                className="w-full px-4 py-2 mt-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary"
-                                required
                             />
+                            <PasswordStrengthMeter password={newPassword} />
                         </div>
                         <div className="mb-4">
-                            <label className="block text-gray-300" htmlFor="confirmNewPassword">Confirmar Nueva Contraseña</label>
-                            <input
-                                type="password"
+                            <PasswordInput
                                 id="confirmNewPassword"
+                                label="Confirmar Nueva Contraseña"
                                 value={confirmNewPassword}
                                 onChange={(e) => setConfirmNewPassword(e.target.value)}
-                                className="w-full px-4 py-2 mt-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary"
-                                required
+                                error={!passwordsMatch && confirmNewPassword}
                             />
                         </div>
                         {error && <p className="text-red-500 mb-4">{error}</p>}

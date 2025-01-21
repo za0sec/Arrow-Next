@@ -57,11 +57,27 @@ export default function DashboardNavbar({ user }) {
                         </div>
 
                         <div className="hidden md:flex md:items-center md:space-x-4 ml-auto">
-                            {/* Menú desplegable */}
+                            {user?.isRoot && (
+                                <Link href="/root/administrators">
+                                    <span className={`relative font-medium ${
+                                        router.pathname.startsWith('/admin/administrators') 
+                                        ? 'text-white' 
+                                        : 'text-gray-300'
+                                    } hover:text-white underline-animation`}>
+                                        Gestionar Administradores
+                                        <span
+                                            className={`absolute -bottom-2.5 left-0 w-full h-0.5 bg-white transform scale-x-0 transition-transform duration-300 ease-out origin-left ${
+                                                router.pathname.startsWith('/admin/administrators') 
+                                                ? 'scale-x-100' 
+                                                : 'hover:scale-x-100'
+                                            }`}
+                                        ></span>
+                                    </span>
+                                </Link>
+                            )}
                             <Menu as="div" className="relative">
                                 <div>
-                                    <Menu.Button
-                                        className="flex items-center text-white bg-gray-800 px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
+                                    <Menu.Button className="flex items-center text-white bg-gray-800 px-4 py-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
                                         <span>{`${user?.firstName} ${user?.lastName}`}</span>
                                         <ChevronDownIcon className="ml-2 h-5 w-5" aria-hidden="true" />
                                     </Menu.Button>

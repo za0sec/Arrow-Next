@@ -4,6 +4,7 @@ import { Dialog, Transition } from '@headlessui/react';
 
 import Cookies from 'js-cookie';
 import apiClient from "@/utils/apiClient";
+import PasswordInput from './PasswordInput';
 
 export default function LoginModal({ isOpen, closeModal }) {
     const router = useRouter();
@@ -84,42 +85,44 @@ export default function LoginModal({ isOpen, closeModal }) {
                                 </Dialog.Title>
                                 <form onSubmit={handleSubmit} className="mt-4">
                                     <div className="mb-4">
+                                        <label className="block text-gray-300" htmlFor="email">
+                                            Correo Electrónico
+                                        </label>
                                         <input
                                             type="email"
-                                            placeholder="Correo Electrónico"
+                                            id="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            className="w-full px-4 py-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-primary focus:ring-primary focus:ring-1"
+                                            className="w-full px-4 py-2 mt-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary"
                                             required
                                         />
                                     </div>
-                                    <div className="mb-4">
-                                        <input
-                                            type="password"
-                                            placeholder="Contraseña"
+                                    <div className="mb-6">
+                                        <PasswordInput
+                                            id="password"
+                                            label="Contraseña"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            className="w-full px-4 py-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-primary focus:ring-primary focus:ring-1"
-                                            required
                                         />
                                     </div>
                                     {error && <p className="text-red-500 mb-4">{error}</p>}
                                     {success && <p className="text-green-500 mb-4">{success}</p>}
+                                    <div className="flex justify-between items-center mb-6">
+                                        <button
+                                            type="button"
+                                            className="text-primary hover:text-primary-dark text-sm"
+                                            onClick={handleForgotPassword}
+                                        >
+                                            ¿Olvidaste tu contraseña?
+                                        </button>
+                                    </div>
                                     <button
                                         type="submit"
-                                        className="w-full bg-primary text-white font-medium px-4 py-2 rounded-md hover:bg-primary-dark"
+                                        className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-dark"
                                     >
                                         Iniciar Sesión
                                     </button>
                                 </form>
-                                <div className="mt-4 text-center">
-                                    <button
-                                        onClick={handleForgotPassword}
-                                        className="text-sm text-gray-300 hover:underline"
-                                    >
-                                        ¿Olvidaste tu contraseña?
-                                    </button>
-                                </div>
                             </Dialog.Panel>
                         </Transition.Child>
                     </div>
