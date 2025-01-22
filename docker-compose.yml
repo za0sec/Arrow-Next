@@ -9,6 +9,4 @@ services:
       - "3002:80"
     env_file:
       - .env.production
-    volumes:
-      - .:/usr/src/app 
     restart:  unless-stopped
