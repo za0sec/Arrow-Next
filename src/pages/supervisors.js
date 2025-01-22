@@ -6,6 +6,7 @@ import { authenticate, fetchWithToken } from "@/utils/auth";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import config from "@/utils/config";
 import apiClient from "@/utils/apiClient";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function SupervisorsPage() {
     const [supervisors, setSupervisors] = useState([]);
@@ -16,6 +17,7 @@ export default function SupervisorsPage() {
     const [supervisorToDelete, setSupervisorToDelete] = useState(null);
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [error, setError] = useState(null);
 
     const router = useRouter();
@@ -70,6 +72,7 @@ export default function SupervisorsPage() {
     };
 
     const handleSave = async () => {
+        setSaving(true);
         const url = isEditMode ? '/admin/supervisor/update' : '/admin/supervisor/add';
         const method = 'POST';
         const payload = isEditMode
@@ -100,6 +103,8 @@ export default function SupervisorsPage() {
             closeDialog();
         } catch (error) {
             console.error('Error saving supervisor:', error);
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -135,7 +140,7 @@ export default function SupervisorsPage() {
 
 
     if (loading) {
-        return <div>Cargando...</div>;
+        return <LoadingSpinner />;
     }
 
     if (error) {
@@ -287,8 +292,9 @@ export default function SupervisorsPage() {
                                         <button
                                             className="bg-primary text-white font-medium px-4 py-2 rounded-lg hover:bg-primary-dark"
                                             onClick={handleSave}
+                                            disabled={saving}
                                         >
-                                            Guardar
+                                            {saving ? <LoadingSpinner size="inline" /> : "Guardar"}
                                         </button>
                                     </div>
                                 </Dialog.Panel>
