@@ -7,6 +7,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import apiClient from '@/utils/apiClient';
 import DashboardNavbar from '../components/DashboardNavbar';
 import { useRouter } from 'next/router';
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 const Reports = () => {
     const [reports, setReports] = useState([]);
@@ -118,6 +119,10 @@ const Reports = () => {
         }
     };
 
+    if (loading) {
+        return <LoadingSpinner />;
+    }
+
     return (
         <div className="bg-gray-900 min-h-screen flex flex-col overflow-auto">
             <DashboardNavbar user={user} />
@@ -147,63 +152,59 @@ const Reports = () => {
                             />
                         </div>
                     </div>
-                    {loading ? (
-                        <p className="text-center text-white">Cargando reportes...</p>
-                    ) : (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <table className="min-w-full bg-gray-700 rounded-lg overflow-hidden">
-                                <thead className="bg-gray-600">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Estado</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Fecha</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Sucursal</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Supervisor</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Reporte</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-600">
-                                    {reports.map((report) => (
-                                        <motion.tr
-                                            key={report.id}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            transition={{ duration: 0.3 }}
-                                            className="hover:bg-gray-600"
-                                        >
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                                                {!report.isSeen && <FaEye className="text-blue-500" />}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-300">{new Date(report.date).toLocaleString()}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-300">{report.branch.name}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-300">{`${report.supervisor.employee.user.firstName} ${report.supervisor.employee.user.lastName}`}</td>
-                                            <td className="px-6 py-4 text-gray-300">{report.report}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                                                <div className="flex space-x-2">
-                                                    <button
-                                                        onClick={() => handleApprove(report.id)}
-                                                        className="p-2"
-                                                    >
-                                                        <FaCheck className="text-primary hover:text-secondary" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(report.id)}
-                                                        className="p-2"
-                                                    >
-                                                        <FaTrash className="text-red-500 hover:text-red-600" />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </motion.tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </motion.div>
-                    )}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        <table className="min-w-full bg-gray-700 rounded-lg overflow-hidden">
+                            <thead className="bg-gray-600">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Estado</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Fecha</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Sucursal</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Supervisor</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Reporte</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-600">
+                                {reports.map((report) => (
+                                    <motion.tr
+                                        key={report.id}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ duration: 0.3 }}
+                                        className="hover:bg-gray-600"
+                                    >
+                                        <td className="px-6 py-4 whitespace-nowrap text-gray-300">
+                                            {!report.isSeen && <FaEye className="text-blue-500" />}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-gray-300">{new Date(report.date).toLocaleString()}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-gray-300">{report.branch.name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-gray-300">{`${report.supervisor.employee.user.firstName} ${report.supervisor.employee.user.lastName}`}</td>
+                                        <td className="px-6 py-4 text-gray-300">{report.report}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-gray-300">
+                                            <div className="flex space-x-2">
+                                                <button
+                                                    onClick={() => handleApprove(report.id)}
+                                                    className="p-2"
+                                                >
+                                                    <FaCheck className="text-primary hover:text-secondary" />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(report.id)}
+                                                    className="p-2"
+                                                >
+                                                    <FaTrash className="text-red-500 hover:text-red-600" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </motion.tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </motion.div>
                     <div className="mt-4 flex justify-center">
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
                             <button

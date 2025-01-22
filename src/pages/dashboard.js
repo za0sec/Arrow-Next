@@ -5,6 +5,7 @@ import apiClient from "@/utils/apiClient";
 import DatePicker from "react-datepicker";
 import 'react-datepicker/dist/react-datepicker.css';
 import { FaChevronDown } from "react-icons/fa";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function Dashboard() {
     const router = useRouter();
@@ -146,7 +147,7 @@ export default function Dashboard() {
 
 
     if (loading) {
-        return <div>Cargando...</div>;
+        return <LoadingSpinner />;
     }
 
     if (error) {

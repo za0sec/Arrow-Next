@@ -7,6 +7,7 @@ import config from "@/utils/config";
 import {authenticate, checkToken, fetchWithToken} from "@/utils/auth";
 import apiClient from "@/utils/apiClient";
 import {useRouter} from "next/router";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function Profile() {
 
@@ -70,7 +71,7 @@ export default function Profile() {
     };
 
     if (loading) {
-        return <div>Cargando...</div>;
+        return <LoadingSpinner />;
     }
 
     if (error) {

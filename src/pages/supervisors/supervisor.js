@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import apiClient from '@/utils/apiClient';
 import DashboardNavbar from "@/components/DashboardNavbar";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function Supervisor() {
     const router = useRouter();
@@ -91,7 +92,7 @@ export default function Supervisor() {
     };
 
     if (loading) {
-        return <div className="text-center text-white">Cargando...</div>;
+        return <LoadingSpinner />;
     }
 
     if (error) {

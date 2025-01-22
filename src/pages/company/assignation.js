@@ -5,6 +5,7 @@ import DashboardNavbar from "@/components/DashboardNavbar";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function Assignation() {
     const [user, setUser] = useState("");
@@ -218,7 +219,7 @@ export default function Assignation() {
     };
 
     if (loading) {
-        return <div>Cargando...</div>;
+        return <LoadingSpinner />;
     }
 
     if (error) {
@@ -322,7 +323,7 @@ export default function Assignation() {
                                 ? "opacity-50 cursor-not-allowed"
                                 : "hover:bg-primary-dark"
                         }`}>
-                        {assigning ? "Asignando..." : "Asignar"}
+                        {assigning ? <LoadingSpinner size="inline" /> : "Asignar"}
                     </button>
                 </div>
             </main>

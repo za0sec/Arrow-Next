@@ -7,6 +7,7 @@ import config from "@/utils/config";
 import apiClient from "@/utils/apiClient";
 import PasswordStrengthMeter from '@/components/PasswordStrengthMeter';
 import PasswordInput from "@/components/PasswordInput";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function ChangePassword() {
     const router = useRouter();
@@ -96,11 +97,7 @@ export default function ChangePassword() {
     };
 
     if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-900">
-                <div className="text-white text-xl">Cargando...</div>
-            </div>
-        );
+        return <LoadingSpinner />;
     }
 
     if (error) {

@@ -5,6 +5,7 @@ import apiClient from "@/utils/apiClient";
 import DashboardNavbar from "@/components/DashboardNavbar";
 import Autocomplete from "react-google-autocomplete";
 import config from "@/utils/config";
+import LoadingSpinner from "@/components/LoadingSpinner";
 
 export default function BranchesPage() {
     const [branches, setBranches] = useState([]);
@@ -197,6 +198,10 @@ export default function BranchesPage() {
 
     function handleAssign() {
         router.push(`/company/assignation?companyId=${companyId}`);
+    }
+
+    if (loading) {
+        return <LoadingSpinner />;
     }
 
     return (
