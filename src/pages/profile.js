@@ -13,7 +13,7 @@ export default function Profile() {
 
     const [success, setSuccess] = useState('');
     const [user, setUser] = useState('');
-    const [profilePicture, setProfilePicture] = useState(`https://arrowconnect.arrowservicios.ar/api/uploads/profile/${user.email}.jpg`);
+    const [profilePicture, setProfilePicture] = useState(`https://arrowconnect.arrowservicios.ar/uploads/profile/${user.email}.jpg`);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [firstName, setFirstName] = useState(user.firstName);

@@ -5,10 +5,12 @@ export default function PasswordInput({
     value, 
     onChange, 
     id, 
+    name,
     label, 
     error,
     showStrengthMeter,
-    className = "" 
+    className = "",
+    autoComplete
 }) {
     const [showPassword, setShowPassword] = useState(false);
 
@@ -23,12 +25,14 @@ export default function PasswordInput({
                 <input
                     type={showPassword ? "text" : "password"}
                     id={id}
+                    name={name}
                     value={value}
                     onChange={onChange}
                     className={`w-full px-4 py-2 pr-12 rounded-md bg-gray-700 text-white border ${
                         error ? 'border-red-500' : 'border-gray-600'
                     } focus:outline-none focus:ring-2 focus:ring-primary ${className}`}
                     required
+                    autoComplete={autoComplete}
                 />
                 <button
                     type="button"

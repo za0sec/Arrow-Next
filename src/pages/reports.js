@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { FaEye, FaEyeSlash, FaEdit, FaTrash, FaPlus, FaCheck } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaEdit, FaTrash, FaPlus, FaCheck, FaEraser } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
@@ -8,6 +8,7 @@ import apiClient from '@/utils/apiClient';
 import DashboardNavbar from '../components/DashboardNavbar';
 import { useRouter } from 'next/router';
 import LoadingSpinner from "@/components/LoadingSpinner";
+import SignatureCanvas from 'react-signature-canvas';
 
 const Reports = () => {
     const [reports, setReports] = useState([]);
@@ -17,6 +18,9 @@ const Reports = () => {
     const [loading, setLoading] = useState(true);
     const [selectedReport, setSelectedReport] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [signatureData, setSignatureData] = useState(null);
+    const [isApproving, setIsApproving] = useState(false);
+    const [signatureRef, setSignatureRef] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -79,7 +83,7 @@ const Reports = () => {
 
     const toggleSeenStatus = async (id, currentStatus) => {
         try {
-            await axios.post('/admin/reports/setSeen', { id });
+            await apiClient.post('/admin/report/setSeen', { id });
             setReports(reports.map(report =>
                 report.id === id ? { ...report, isSeen: !currentStatus } : report
             ));
@@ -93,6 +97,53 @@ const Reports = () => {
         setIsModalOpen(true);
     };
 
+    const clearSignature = () => {
+        if (signatureRef) {
+            signatureRef.clear();
+        }
+    };
+
+    const handleSubmitApproval = async (e) => {
+        e.preventDefault();
+        
+        if (!signatureRef || signatureRef.isEmpty()) {
+            alert('Por favor, firme para aprobar el reporte');
+            return;
+        }
+        
+        try {
+            setIsApproving(true);
+            
+            const signatureDataURL = signatureRef.toDataURL('image/png');
+            const signatureBlob = await (await fetch(signatureDataURL)).blob();
+            
+            const formData = new FormData();
+            formData.append('id', selectedReport.branch.id);
+            formData.append('date', new Date().toISOString().split('T')[0]);
+            formData.append('report', selectedReport.report);
+            formData.append('name', `${user.firstName} ${user.lastName}`);
+            formData.append('reportId', selectedReport.id);
+            formData.append('firma', new File([signatureBlob], 'signature.png', { type: 'image/png' }));
+            
+            const response = await apiClient.post('/admin/report/agreeReport', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            
+            if (response.status === 200) {
+                alert('Reporte aprobado correctamente');
+                fetchReports(); // Recargar los reportes
+            }
+        } catch (error) {
+            console.error('Error approving report:', error);
+            alert('Error al aprobar el reporte');
+        } finally {
+            setIsApproving(false);
+            setIsModalOpen(false);
+        }
+    };
+
     const handleDelete = async (id) => {
         if (window.confirm('¿Estás seguro de que quieres eliminar este reporte?')) {
             try {
@@ -101,21 +152,6 @@ const Reports = () => {
             } catch (error) {
                 console.error('Error deleting report:', error);
             }
-        }
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            if (selectedReport) {
-                await axios.put(`/admin/reports/${selectedReport.id}`, selectedReport);
-            } else {
-                await axios.post('/admin/reports', selectedReport);
-            }
-            setIsModalOpen(false);
-            fetchReports();
-        } catch (error) {
-            console.error('Error submitting report:', error);
         }
     };
 
@@ -187,16 +223,20 @@ const Reports = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-gray-300">
                                             <div className="flex space-x-2">
                                                 <button
-                                                    onClick={() => handleApprove(report.id)}
-                                                    className="p-2"
+                                                    onClick={() => handleApprove(report)}
+                                                    className="p-2 tooltip-container"
+                                                    title="Aprobar y marcar como omitida"
                                                 >
                                                     <FaCheck className="text-primary hover:text-secondary" />
+                                                    <span className="tooltip">Aprobar y marcar como omitida</span>
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(report.id)}
-                                                    className="p-2"
+                                                    className="p-2 tooltip-container"
+                                                    title="Eliminar reporte"
                                                 >
                                                     <FaTrash className="text-red-500 hover:text-red-600" />
+                                                    <span className="tooltip">Eliminar reporte</span>
                                                 </button>
                                             </div>
                                         </td>
@@ -219,21 +259,66 @@ const Reports = () => {
                 </div>
             </main>
 
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+            {isModalOpen && selectedReport && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
                     <motion.div
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="bg-gray-800 p-6 rounded-lg w-1/2"
+                        className="bg-gray-800 p-6 rounded-lg w-1/2 max-h-[90vh] overflow-y-auto"
                     >
-                        <h2 className="text-2xl font-bold text-white mb-4">{selectedReport ? 'Editar Reporte' : 'Nuevo Reporte'}</h2>
-                        <form onSubmit={handleSubmit}>
-                            {/* Aquí irían los campos del formulario */}
-                            <div className="flex justify-end mt-4">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="mr-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">Cancelar</button>
-                                <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Guardar</button>
+                        <h2 className="text-2xl font-bold text-white mb-4">Aprobar Reporte</h2>
+                        <div className="mb-4">
+                            <p className="text-white mb-2"><span className="font-bold">Sucursal:</span> {selectedReport.branch.name}</p>
+                            <p className="text-white mb-2"><span className="font-bold">Supervisor:</span> {`${selectedReport.supervisor.employee.user.firstName} ${selectedReport.supervisor.employee.user.lastName}`}</p>
+                            <p className="text-white mb-2"><span className="font-bold">Fecha:</span> {new Date(selectedReport.date).toLocaleString()}</p>
+                            <div className="bg-gray-700 p-3 rounded-md mt-2">
+                                <p className="text-white mb-1 font-bold">Reporte:</p>
+                                <p className="text-gray-300">{selectedReport.report}</p>
                             </div>
-                        </form>
+                        </div>
+                        
+                        <div className="mb-4">
+                            <p className="text-white mb-2 font-bold">Firma para aprobar:</p>
+                            <div className="bg-white rounded-md overflow-hidden">
+                                <SignatureCanvas
+                                    ref={(ref) => setSignatureRef(ref)}
+                                    canvasProps={{
+                                        width: 500,
+                                        height: 200,
+                                        className: 'signature-canvas'
+                                    }}
+                                />
+                            </div>
+                            <button 
+                                onClick={clearSignature}
+                                className="mt-2 px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 flex items-center"
+                            >
+                                <FaEraser className="mr-1" /> Limpiar firma
+                            </button>
+                        </div>
+                        
+                        <div className="flex justify-end mt-4">
+                            <button 
+                                type="button" 
+                                onClick={() => setIsModalOpen(false)} 
+                                className="mr-2 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+                                disabled={isApproving}
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                type="button" 
+                                onClick={handleSubmitApproval} 
+                                className="px-4 py-2 bg-primary text-white rounded hover:bg-secondary flex items-center"
+                                disabled={isApproving}
+                            >
+                                {isApproving ? 'Procesando...' : (
+                                    <>
+                                        <FaCheck className="mr-1" /> Aprobar
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </motion.div>
                 </div>
             )}
@@ -242,3 +327,40 @@ const Reports = () => {
 };
 
 export default Reports;
+
+// Estilos para los tooltips
+const styles = `
+.tooltip-container {
+    position: relative;
+}
+
+.tooltip {
+    visibility: hidden;
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+}
+
+.tooltip-container:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+`;
+
+// Añadir estilos al documento
+if (typeof document !== 'undefined') {
+    const styleElement = document.createElement('style');
+    styleElement.innerHTML = styles;
+    document.head.appendChild(styleElement);
+}

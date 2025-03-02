@@ -24,14 +24,18 @@ export default function ChangePassword() {
         const fetchUser = async () => {
             try {
                 const response = await apiClient.get('/user/profile');
-
+                if (response.data && response.data.eH) {
+                    console.log(response.data.eH);
+                } else {
+                    console.error('Propiedad `eH` no encontrada en la respuesta.');
+                }
                 if (response.status === 200) {
                     setUser(response.data);
                 } else if (response.status === 401) {
                     router.push('/');
                 } else {
                     setError('Error al obtener el perfil del usuario');
-                }
+                }  
             } catch (error) {
                 setError('Error al obtener el perfil del usuario');
                 console.error('Error en autenticación:', error);

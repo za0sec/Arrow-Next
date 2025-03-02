@@ -14,7 +14,22 @@ export default function Dashboard() {
     const [supervisors, setSupervisors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [date, setDate] = useState(new Date());
+    const [date, setDate] = useState(null);
+
+    // Obtener la fecha de Argentina al cargar el componente
+    useEffect(() => {
+        const getArgentinaDate = async () => {
+            try {
+                const response = await fetch('http://worldtimeapi.org/api/timezone/America/Argentina/Buenos_Aires');
+                const data = await response.json();
+                setDate(new Date(data.datetime));
+            } catch (error) {
+                console.error('Error al obtener la fecha de Argentina:', error);
+                setDate(new Date()); // Fallback a fecha local si hay error
+            }
+        };
+        getArgentinaDate();
+    }, []);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -50,13 +65,15 @@ export default function Dashboard() {
                 const supervisorsWithDetails = await Promise.all(
                     supervisorsData.map(async (supervisor) => {
                         try {
+                            const adjustedDate = new Date(date);
+                            adjustedDate.setHours(0, 0, 0, 0);
+                            
                             const dayResponse = await apiClient.get('/user/supervisor/supervisorDay', {
                                 params: {
                                     email: supervisor.email,
-                                    date,
+                                    date: adjustedDate.toISOString().split('T')[0],
                                 }
                             });
-
 
                             const dayDetails = dayResponse.data;
 
@@ -87,11 +104,11 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
-        fetchSupervisors();
-
-        const intervalId = setInterval(fetchSupervisors, 10000);
-
-        return () => clearInterval(intervalId);
+        if (date) {
+            fetchSupervisors();
+            const intervalId = setInterval(fetchSupervisors, 10000);
+            return () => clearInterval(intervalId);
+        }
     }, [router, date]);
 
 
@@ -175,7 +192,7 @@ export default function Dashboard() {
                         </h1>
                         <div className="relative flex items-center">
                             <DatePicker
-                                selected={new Date(date).toDateString()}
+                                selected={date}
                                 onChange={handleDateChange}
                                 className="bg-gray-700 text-white p-2 pr-10 rounded-md"
                                 dateFormat="yyyy-MM-dd"
@@ -207,11 +224,15 @@ export default function Dashboard() {
                                         supervisor.dayDetails.branches.map((company) => (
                                             <li key={company.id} className="flex items-center">
                                                 <span
-                                                    className={`mr-2 h-4 w-4 rounded-full ${company.visited ? 'bg-green-500' : 'bg-red-500'}`}
+                                                    className={`mr-2 h-4 w-4 rounded-full ${
+                                                        company.visited ? 'bg-green-500' : 
+                                                        company.skipped ? 'bg-yellow-500' : 'bg-red-500'
+                                                    }`}
                                                 ></span>
                                                 <span>{company.name}</span>
                                                 <span className="ml-auto text-sm text-gray-400">
-                                                    {company.visited ? 'Completado' : 'Pendiente'}
+                                                    {company.visited ? 'Completado' : 
+                                                     company.skipped ? 'Omitida por aviso' : 'Pendiente'}
                                                 </span>
                                             </li>
                                         ))
@@ -246,4 +267,3 @@ export default function Dashboard() {
         </div>
     );
 }
-

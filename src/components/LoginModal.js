@@ -1,4 +1,4 @@
-import { useState, Fragment } from 'react';
+import { useState, Fragment, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Dialog, Transition } from '@headlessui/react';
 
@@ -13,6 +13,13 @@ export default function LoginModal({ isOpen, closeModal }) {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
+    useEffect(() => {
+        const savedEmail = localStorage.getItem('savedEmail');
+        const savedPassword = localStorage.getItem('savedPassword');
+        if (savedEmail) setEmail(savedEmail);
+        if (savedPassword) setPassword(savedPassword);
+    }, []);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -24,6 +31,9 @@ export default function LoginModal({ isOpen, closeModal }) {
             });
 
             if (response.status === 200) {
+                localStorage.setItem('savedEmail', email);
+                localStorage.setItem('savedPassword', password);
+                
                 const { accessToken, refreshToken } = response.data;
 
                 console.log("refresh obtenido del login: ", refreshToken);
@@ -83,7 +93,11 @@ export default function LoginModal({ isOpen, closeModal }) {
                                 >
                                     Inicio de Sesión
                                 </Dialog.Title>
-                                <form onSubmit={handleSubmit} className="mt-4">
+                                <form 
+                                    onSubmit={handleSubmit} 
+                                    className="mt-4"
+                                    autoComplete="on"
+                                >
                                     <div className="mb-4">
                                         <label className="block text-gray-300" htmlFor="email">
                                             Correo Electrónico
@@ -91,18 +105,22 @@ export default function LoginModal({ isOpen, closeModal }) {
                                         <input
                                             type="email"
                                             id="email"
+                                            name="email"
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
                                             className="w-full px-4 py-2 mt-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary"
                                             required
+                                            autoComplete="username"
                                         />
                                     </div>
                                     <div className="mb-6">
                                         <PasswordInput
                                             id="password"
+                                            name="password"
                                             label="Contraseña"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
+                                            autoComplete="current-password"
                                         />
                                     </div>
                                     {error && <p className="text-red-500 mb-4">{error}</p>}
