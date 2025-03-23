@@ -88,7 +88,7 @@ export default function DeleteAccount() {
                 />
               </div>
               <p className="mt-2 text-sm text-gray-400">
-                Escribe exactamente "Quiero borrar mi cuenta" para confirmar
+                Escribe exactamente \"Quiero borrar mi cuenta\" para confirmar
               </p>
             </div>
 
