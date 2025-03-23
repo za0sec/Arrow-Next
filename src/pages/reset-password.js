@@ -47,10 +47,9 @@ export default function ResetPassword() {
         const hasNumber = /\d/.test(password);
         const hasLower = /[a-z]/.test(password);
         const hasUpper = /[A-Z]/.test(password);
-        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
-        if (!hasNumber || !hasLower || !hasUpper || !hasSpecial) {
-            setError("La contraseña no cumple con los requisitos de seguridad");
+        if (!hasNumber || !hasLower || !hasUpper) {
+            setError("La contraseña debe contener al menos un número, una letra minúscula y una letra mayúscula");
             return;
         }
 
