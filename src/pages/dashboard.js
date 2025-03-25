@@ -35,17 +35,24 @@ export default function Dashboard() {
         const fetchUser = async () => {
             try {
                 const response = await apiClient.get('/user/profile');
-
                 if (response.status === 200) {
-                    setUser(response.data);
-                    console.log(response.data);
+                    const userData = response.data;
+                    const userRole = localStorage.getItem('userRole');
+                    
+                    // Verificar que sea un administrador
+                    if (userRole !== 'administrator') {
+                        if (userRole === 'rrhh') {
+                            router.push('/rrhh/dni-management');
+                        } else {
+                            router.push('/');
+                        }
+                        return;
+                    }
+                    setUser(userData);
                 } else if (response.status === 401) {
                     router.push('/');
-                } else {
-                    setError('Error al obtener el perfil del usuario');
                 }
             } catch (error) {
-                setError('Error al obtener el perfil del usuario');
                 console.error('Error en autenticación:', error);
                 router.push('/');
             } finally {

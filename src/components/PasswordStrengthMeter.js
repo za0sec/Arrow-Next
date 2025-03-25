@@ -12,36 +12,32 @@ export default function PasswordStrengthMeter({ password }) {
         if (pass.length < 8) {
             checks.push('Debe tener al menos 8 caracteres');
         } else {
-            score += 20;
+            score += 25;
         }
 
         // Contiene números
         if (!/\d/.test(pass)) {
             checks.push('Debe incluir al menos un número');
         } else {
-            score += 20;
+            score += 25;
         }
 
         // Contiene minúsculas
         if (!/[a-z]/.test(pass)) {
             checks.push('Debe incluir al menos una letra minúscula');
         } else {
-            score += 20;
+            score += 25;
         }
 
         // Contiene mayúsculas
         if (!/[A-Z]/.test(pass)) {
             checks.push('Debe incluir al menos una letra mayúscula');
         } else {
-            score += 20;
+            score += 25;
         }
 
-        // Contiene caracteres especiales
-        if (!/[!@#$%^&*(),.?":{}|<>]/.test(pass)) {
-            checks.push('Debe incluir al menos un carácter especial');
-        } else {
-            score += 20;
-        }
+        // Eliminada la verificación de caracteres especiales
+        // y redistribuido el puntaje entre los demás criterios
 
         setStrength(score);
         setFeedback(checks);
@@ -52,10 +48,9 @@ export default function PasswordStrengthMeter({ password }) {
     }, [password]);
 
     const getColor = () => {
-        if (strength <= 20) return 'bg-red-500';
-        if (strength <= 40) return 'bg-red-300';
-        if (strength <= 60) return 'bg-yellow-500';
-        if (strength <= 80) return 'bg-yellow-300';
+        if (strength <= 25) return 'bg-red-500';
+        if (strength <= 50) return 'bg-red-300';
+        if (strength <= 75) return 'bg-yellow-500';
         return 'bg-green-500';
     };
 

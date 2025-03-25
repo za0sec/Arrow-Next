@@ -31,27 +31,42 @@ export default function LoginModal({ isOpen, closeModal }) {
             });
 
             if (response.status === 200) {
+                const { accessToken, refreshToken, role } = response.data;
+
+                // Verificar que el rol sea válido
+                if (role !== 'administrator' && role !== 'rrhh') {
+                    setError('No tienes permisos para acceder al sistema');
+                    return;
+                }
+
                 localStorage.setItem('savedEmail', email);
                 localStorage.setItem('savedPassword', password);
+                // Guardar el rol en localStorage
+                localStorage.setItem('userRole', role);
                 
-                const { accessToken, refreshToken } = response.data;
-
-                console.log("refresh obtenido del login: ", refreshToken);
-
                 Cookies.set('accessToken', accessToken, { secure: true, sameSite: 'Strict' });
                 Cookies.set('refreshToken', refreshToken, { secure: true, sameSite: 'Strict' });
 
                 setSuccess('Inicio de sesión exitoso');
                 setTimeout(() => {
                     closeModal();
-                    router.push('/dashboard');
+                    // Redirigir según el rol
+                    if (role === 'rrhh') {
+                        router.push('/rrhh/dni-management');
+                    } else {
+                        router.push('/dashboard');
+                    }
                 }, 2000);
             } else {
                 const errorData = response.data;
                 setError(errorData.message || 'Error al iniciar sesión');
             }
         } catch (error) {
-            setError('Error de red. Inténtalo de nuevo.');
+            if (error.response?.status === 403) {
+                setError('No tienes permisos para acceder al sistema');
+            } else {
+                setError('Error de red. Inténtalo de nuevo.');
+            }
         }
     };
 

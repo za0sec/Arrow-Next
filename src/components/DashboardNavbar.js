@@ -12,6 +12,7 @@ const navigation = [
     { name: 'Empresas', href: '/company' },
     { name: 'Visitas', href: '/visits' },
     { name: 'Reportes', href: '/reports' },
+    { name: 'Asistencia', href: '/attendance' },
 ];
 
 export default function DashboardNavbar({ user }) {
@@ -59,16 +60,16 @@ export default function DashboardNavbar({ user }) {
 
                         <div className="hidden md:flex md:items-center md:space-x-4 ml-auto">
                             {user?.isRoot && (
-                                <Link href="/root/administrators">
+                                <Link href="/root/users">
                                     <span className={`relative font-medium ${
-                                        router.pathname.startsWith('/admin/administrators') 
+                                        router.pathname.startsWith('/root/users') 
                                         ? 'text-white' 
                                         : 'text-gray-300'
                                     } hover:text-white underline-animation`}>
-                                        Gestionar Administradores
+                                        Gestionar Usuarios
                                         <span
                                             className={`absolute -bottom-2.5 left-0 w-full h-0.5 bg-white transform scale-x-0 transition-transform duration-300 ease-out origin-left ${
-                                                router.pathname.startsWith('/admin/administrators') 
+                                                router.pathname.startsWith('/root/users') 
                                                 ? 'scale-x-100' 
                                                 : 'hover:scale-x-100'
                                             }`}
