@@ -133,12 +133,6 @@ export default function CompaniesPage() {
                 );
             });
 
-            console.log('Geocoding result:', {
-                formatted_address: result.formatted_address,
-                lat: result.geometry.location.lat(),
-                lng: result.geometry.location.lng()
-            });
-
             const payload = {
                 ...currentCompany,
                 address: result.formatted_address,
@@ -149,8 +143,7 @@ export default function CompaniesPage() {
             const url = isEditMode ? '/admin/company/update' : '/admin/company/add';
             await apiClient.post(url, payload);
             
-            const response = await apiClient.get('/admin/companies/all');
-            setCompanies(response.data);
+            await fetchCompanies(page, search);
             closeDialog();
         } catch (error) {
             console.error('Error saving company:', error);
@@ -166,8 +159,7 @@ export default function CompaniesPage() {
     const handleDelete = async () => {
         try {
             await apiClient.post('/admin/company/delete', { id: companyToDelete.id });
-            const response = await apiClient.get('/admin/companies/all');
-            setCompanies(response.data);
+            await fetchCompanies(page, search);
             closeDeleteConfirmDialog();
         } catch (error) {
             console.error('Error deleting company:', error);

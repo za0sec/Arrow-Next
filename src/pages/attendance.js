@@ -18,6 +18,7 @@ export default function AttendancePage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [user, setUser] = useState(null);
+    const [allCompanies, setAllCompanies] = useState([]);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -35,8 +36,9 @@ export default function AttendancePage() {
             }
         };
 
+        fetchAllCompanies();
         fetchUser();
-    }, [router]);
+    }, []);
 
     useEffect(() => {
         fetchCompanies();
@@ -72,6 +74,21 @@ export default function AttendancePage() {
             console.error('Error fetching branches:', error);
         }
         setLoading(false);
+    };
+
+    const fetchAllCompanies = async () => {
+        try {
+            const response = await apiClient.get('/admin/companies/all', {
+                params: {
+                    limit: 1000,
+                    page: 1
+                }
+            });
+            setAllCompanies(response.data.companies || []);
+        } catch (error) {
+            console.error('Error fetching all companies:', error);
+            setAllCompanies([]);
+        }
     };
 
     const goToPage = (page) => {
@@ -139,7 +156,7 @@ export default function AttendancePage() {
                                     onChange={(e) => setSelectedCompany(e.target.value)}
                                 >
                                     <option value="">Todas las empresas</option>
-                                    {companies.map((company) => (
+                                    {allCompanies.map((company) => (
                                         <option key={company.id} value={company.id}>
                                             {company.name}
                                         </option>
