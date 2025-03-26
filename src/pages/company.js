@@ -3,6 +3,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { useRouter } from 'next/router';
 import apiClient from "@/utils/apiClient";
 import DashboardNavbar from '@/components/DashboardNavbar';
+import { debounce } from 'lodash';
 
 export default function CompaniesPage() {
     const [companies, setCompanies] = useState([]);
@@ -22,6 +23,11 @@ export default function CompaniesPage() {
     const [user, setUser] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [search, setSearch] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const ITEMS_PER_PAGE = 12;
 
     const router = useRouter();
 
@@ -49,17 +55,34 @@ export default function CompaniesPage() {
         fetchUser();
     }, [router]);
 
-    useEffect(() => {
-        const fetchCompanies = async () => {
-            try {
-                const response = await apiClient.get('/admin/companies/all');
-                setCompanies(response.data);
-            } catch (error) {
-                console.error('Error fetching companies:', error);
-            }
-        };
+    const debouncedSearch = debounce((searchTerm) => {
+        setSearch(searchTerm);
+        setPage(1); // Reset a la primera página cuando se busca
+        fetchCompanies(1, searchTerm);
+    }, 300);
 
-        fetchCompanies();
+    const fetchCompanies = async (pageNum, searchTerm = search) => {
+        setIsLoading(true);
+        try {
+            const response = await apiClient.get('/admin/companies/all', {
+                params: {
+                    page: pageNum,
+                    limit: ITEMS_PER_PAGE,
+                    search: searchTerm
+                }
+            });
+            setCompanies(response.data.companies);
+            setTotalPages(response.data.pages);
+            setPage(response.data.currentPage);
+        } catch (error) {
+            console.error('Error fetching companies:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchCompanies(page);
     }, []);
 
     const openDialog = (company = { id: '', name: '' }) => {
@@ -164,64 +187,123 @@ export default function CompaniesPage() {
         router.push(`/company/assignation`);
     }
 
+    // Componente de paginación
+    const Pagination = () => (
+        <div className="flex justify-center mt-6 mb-8 space-x-2">
+            <button
+                onClick={() => fetchCompanies(page - 1)}
+                disabled={page === 1}
+                className={`px-4 py-2 rounded-md ${
+                    page === 1 
+                    ? 'bg-gray-600 cursor-not-allowed' 
+                    : 'bg-primary hover:bg-secondary'
+                } text-white text-xl font-bold`}
+                aria-label="Página anterior"
+            >
+                ←
+            </button>
+            <span className="px-4 py-2 text-white">
+                Página {page} de {totalPages}
+            </span>
+            <button
+                onClick={() => fetchCompanies(page + 1)}
+                disabled={page === totalPages}
+                className={`px-4 py-2 rounded-md ${
+                    page === totalPages 
+                    ? 'bg-gray-600 cursor-not-allowed' 
+                    : 'bg-primary hover:bg-secondary'
+                } text-white text-xl font-bold`}
+                aria-label="Página siguiente"
+            >
+                →
+            </button>
+        </div>
+    );
+
     return (
         <div className="bg-gray-900 min-h-screen flex flex-col">
             <DashboardNavbar user={user} />
-            <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 mt-16">
+            <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 mt-16 flex flex-col">
                 <div className="bg-gray-800 p-6 rounded-lg shadow-lg mb-10">
                     <h1 className="text-4xl font-bold text-white mb-4">
                         Gestión de Empresas
                     </h1>
-                    <div className="flex justify-between">
-                        <button
-                            onClick={() => openDialog()}
-                            className="bg-primary text-white py-2 px-4 rounded-md mb-4 hover:bg-secondary"
-                        >
-                            Agregar Empresa
-                        </button>
-                        <button
-                            onClick={() => handleAssign()}
-                            className="bg-primary text-white py-2 px-4 rounded-md mb-4 hover:bg-secondary"
-                        >
-                            Asignar Supervisores
-                        </button>
+                    <div className="flex flex-col sm:flex-row justify-between gap-4">
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => openDialog()}
+                                className="bg-primary text-white py-2 px-4 rounded-md hover:bg-secondary"
+                            >
+                                Agregar Empresa
+                            </button>
+                            <button
+                                onClick={() => handleAssign()}
+                                className="bg-primary text-white py-2 px-4 rounded-md hover:bg-secondary"
+                            >
+                                Asignar Supervisores
+                            </button>
+                        </div>
+                        <div className="w-full sm:w-64">
+                            <input
+                                type="text"
+                                placeholder="Buscar empresas..."
+                                onChange={(e) => debouncedSearch(e.target.value)}
+                                className="w-full px-4 py-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                        </div>
                     </div>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                    {companies.map((company) => (
-                        <div
-                            key={company.id}
-                            className="bg-gray-800 p-6 rounded-lg shadow-lg text-gray-300 cursor-pointer transition duration-300 hover:bg-gray-700"
-                            onClick={() => navigateToBranches(company.id)}
-                        >
-                            <h3 className="text-xl font-bold text-primary mb-2">
-                                {company.name}
-                            </h3>
-                            <div className="mt-4 flex space-x-4">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        openDialog(company);
-                                    }}
-                                    className="bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600"
-                                    style={{pointerEvents: 'auto'}}
+
+                <Pagination />
+
+                {isLoading ? (
+                    <div className="flex justify-center items-center h-64">
+                        <div className="text-white">Cargando...</div>
+                    </div>
+                ) : companies.length === 0 ? (
+                    <div className="text-center text-gray-300 mt-10">
+                        No se encontraron empresas
+                    </div>
+                ) : (
+                    <>
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-6">
+                            {companies.map((company) => (
+                                <div
+                                    key={company.id}
+                                    className="bg-gray-800 p-6 rounded-lg shadow-lg text-gray-300 cursor-pointer transition duration-300 hover:bg-gray-700"
+                                    onClick={() => navigateToBranches(company.id)}
                                 >
-                                    Editar
-                                </button>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        confirmDelete(company);
-                                    }}
-                                    className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600"
-                                    style={{pointerEvents: 'auto'}}
-                                >
-                                    Eliminar
-                                </button>
-                            </div>
+                                    <h3 className="text-xl font-bold text-primary mb-2">
+                                        {company.name}
+                                    </h3>
+                                    <div className="mt-4 flex space-x-4">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openDialog(company);
+                                            }}
+                                            className="bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600"
+                                            style={{pointerEvents: 'auto'}}
+                                        >
+                                            Editar
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                confirmDelete(company);
+                                            }}
+                                            className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600"
+                                            style={{pointerEvents: 'auto'}}
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
+                    </>
+                )}
+                <div className="flex-grow mt-auto"></div>
             </main>
 
             {/* Dialogo para agregar/editar empresas */}
