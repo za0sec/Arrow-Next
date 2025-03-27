@@ -39,7 +39,468 @@ export default function BranchesPage() {
     const [reportData, setReportData] = useState(null);
     const [loadingReport, setLoadingReport] = useState(false);
     const [isToggling, setIsToggling] = useState(false);
+    const [isAttendanceReportDialogOpen, setIsAttendanceReportDialogOpen] = useState(false);
+    const [attendanceStartDate, setAttendanceStartDate] = useState(new Date(new Date().setDate(1))); // Primer día del mes actual
+    const [attendanceEndDate, setAttendanceEndDate] = useState(new Date()); // Hoy
+    const [attendanceReportData, setAttendanceReportData] = useState(null);
+    const [loadingAttendanceReport, setLoadingAttendanceReport] = useState(false);
+    
+    const openAttendanceReportDialog = () => {
+        setIsAttendanceReportDialogOpen(true);
+    };
 
+    const closeAttendanceReportDialog = () => {
+        setIsAttendanceReportDialogOpen(false);
+    };
+
+    const generateAttendanceReportData = async () => {
+        try {
+            setLoadingAttendanceReport(true);
+            setErrorMessage("");
+            
+            if (!companyId) {
+                setErrorMessage("ID de compañía no disponible");
+                setLoadingAttendanceReport(false);
+                return;
+            }
+            
+            console.log("Enviando parámetros para reporte de asistencia:", {
+                companyId,
+                startDate: attendanceStartDate.toISOString().split('T')[0],
+                endDate: attendanceEndDate.toISOString().split('T')[0]
+            });
+            
+            const response = await apiClient.get(`/admin/company/attendance-report`, {
+                params: {
+                    companyId: companyId,
+                    startDate: attendanceStartDate.toISOString().split('T')[0],
+                    endDate: attendanceEndDate.toISOString().split('T')[0]
+                }
+            });
+            
+            console.log("Respuesta reporte asistencia:", response.data);
+            setAttendanceReportData(response.data);
+        } catch (error) {
+            console.error("Error generating attendance report data:", error);
+            if (error.response) {
+                console.error("Respuesta de error:", error.response.data);
+                setErrorMessage(`Error: ${error.response.data.error || error.response.statusText}`);
+            } else {
+                setErrorMessage("Error al generar los datos del reporte de asistencia");
+            }
+            setTimeout(() => setErrorMessage(""), 5000);
+        } finally {
+            setLoadingAttendanceReport(false);
+        }
+    };
+
+    const generateAttendancePDF = async () => {
+        if (!attendanceReportData) {
+            setErrorMessage("No hay datos para generar el reporte de asistencia");
+            return;
+        }
+
+        try {
+            console.log("Iniciando generación de PDF de asistencia con datos:", attendanceReportData);
+            
+            // Crear un nuevo documento PDF
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'mm',
+                format: 'a4'
+            });
+            
+            // Configuración de colores y estilos
+            const primaryColor = [0, 181, 238]; // #00b5ee
+            const secondaryColor = [128, 128, 128]; // Gris
+            const orangeColor = [255, 165, 0]; // Color para incompletas
+            const redColor = [255, 0, 0]; // Rojo para problemas
+            const greenColor = [0, 128, 0]; // Verde para completas
+            
+            // Encabezado con logo
+            try {
+                const logoUrl = '/images/logo-arrow.png';
+                const logoImg = await loadImage(logoUrl);
+                const logoWidth = 40;
+                const logoHeight = (logoImg.height * logoWidth) / logoImg.width;
+                doc.addImage(logoImg, 'PNG', 10, 10, logoWidth, logoHeight);
+                console.log("Logo cargado correctamente");
+            } catch (err) {
+                console.error('Error cargando el logo:', err);
+                // Alternativa si falla la carga del logo
+                doc.setFontSize(22);
+                doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+                doc.text("ARROW CONNECT", 15, 20);
+            }
+            
+            // Título del documento
+            doc.setFontSize(20);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text("REPORTE DE ASISTENCIA", 105, 30, { align: "center" });
+            
+            // Línea divisoria
+            doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.setLineWidth(0.5);
+            doc.line(10, 35, 200, 35);
+            
+            // Información de la empresa
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            
+            // Cuadro de información principal
+            doc.setFillColor(245, 245, 245);
+            doc.roundedRect(10, 40, 190, 30, 3, 3, 'F');
+            
+            doc.setFontSize(11);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text("INFORMACIÓN DE LA EMPRESA", 15, 48);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Empresa: ${company?.name || 'No especificada'}`, 15, 55);
+            doc.text(`Período: ${attendanceStartDate.toLocaleDateString()} - ${attendanceEndDate.toLocaleDateString()}`, 15, 62);
+            
+            // Verificar que los datos existan antes de usarlos
+            const totalAttendances = attendanceReportData.totalAttendances || 0;
+            const completedAttendances = attendanceReportData.completedAttendances || 0;
+            const incompleteAttendances = attendanceReportData.incompleteAttendances || 0;
+            const completionRate = attendanceReportData.completionRate || 0;
+            
+            // Resumen estadístico
+            doc.setFillColor(245, 245, 245);
+            doc.roundedRect(10, 80, 190, 40, 3, 3, 'F');
+            
+            doc.setFontSize(11);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text("RESUMEN DE ASISTENCIAS", 15, 88);
+            
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Total de registros: ${totalAttendances}`, 15, 95);
+            doc.text(`Asistencias completas: ${completedAttendances}`, 15, 102);
+            doc.text(`Asistencias incompletas: ${incompleteAttendances}`, 15, 109);
+            doc.text(`Tasa de completitud: ${completionRate}%`, 120, 102);
+            
+            // Título de la tabla
+            doc.setFontSize(11);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text("DETALLE DE ASISTENCIA POR SUCURSAL", 105, 130, { align: "center" });
+            
+            // Verificar que branches exista y tenga elementos
+            if (!attendanceReportData.branches || attendanceReportData.branches.length === 0) {
+                doc.setFontSize(11);
+                doc.setTextColor(255, 0, 0);
+                doc.text("No hay datos de sucursales disponibles", 105, 140, { align: "center" });
+            } else {
+                // Configuración de la tabla
+                let yPosition = 140;
+                const rowHeight = 10;
+                
+                // Definir anchos de columnas para mejor alineación
+                const colWidths = {
+                    sucursal: 60,
+                    total: 30,
+                    completas: 30,
+                    incompletas: 30,
+                    tasa: 30
+                };
+                
+                // Posiciones X de las columnas (acumulativo)
+                const colPos = {
+                    sucursal: 10,
+                    total: colWidths.sucursal + 10,
+                    completas: colWidths.sucursal + colWidths.total + 10,
+                    incompletas: colWidths.sucursal + colWidths.total + colWidths.completas + 10,
+                    tasa: colWidths.sucursal + colWidths.total + colWidths.completas + colWidths.incompletas + 10
+                };
+                
+                // Encabezados
+                doc.setFontSize(10);
+                doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+                doc.setTextColor(255, 255, 255);
+                doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+                
+                // Rectángulo para encabezados
+                doc.rect(10, yPosition, 190, rowHeight, 'F');
+                
+                // Textos de encabezados
+                doc.text("Sucursal", colPos.sucursal + 5, yPosition + 7);
+                doc.text("Total", colPos.total + 10, yPosition + 7);
+                doc.text("Completas", colPos.completas + 5, yPosition + 7);
+                doc.text("Incompletas", colPos.incompletas + 5, yPosition + 7);
+                doc.text("% Comp.", colPos.tasa + 5, yPosition + 7);
+                
+                yPosition += rowHeight;
+                
+                // Filas de datos
+                doc.setTextColor(0, 0, 0);
+                
+                // Alternar colores para las filas
+                let isAlternateRow = false;
+                
+                for (const branch of attendanceReportData.branches) {
+                    // Fondo para filas alternas
+                    if (isAlternateRow) {
+                        doc.setFillColor(240, 240, 240);
+                        doc.rect(10, yPosition, 190, rowHeight, 'F');
+                    }
+                    isAlternateRow = !isAlternateRow;
+                    
+                    // Datos de la sucursal
+                    const branchName = branch.name || 'Sin nombre';
+                    const totalCheckins = branch.totalCheckins || 0;
+                    const completedCheckins = branch.completedCheckins || 0;
+                    const incompleteCheckins = branch.incompleteCheckins || 0;
+                    
+                    // Calcular tasa de completitud
+                    const completionRate = totalCheckins > 0 
+                        ? ((completedCheckins / totalCheckins) * 100).toFixed(0) 
+                        : 0;
+                    
+                    // Textos centrados en sus columnas
+                    doc.text(branchName.length > 20 ? branchName.substring(0, 17) + '...' : branchName, 
+                             colPos.sucursal + 5, yPosition + 7);
+                    doc.text(String(totalCheckins), colPos.total + 10, yPosition + 7);
+                    doc.text(String(completedCheckins), colPos.completas + 10, yPosition + 7);
+                    doc.text(String(incompleteCheckins), colPos.incompletas + 10, yPosition + 7);
+                    
+                    // Color según el porcentaje
+                    if (completionRate >= 80) {
+                        doc.setTextColor(greenColor[0], greenColor[1], greenColor[2]); // Verde
+                    } else if (completionRate >= 50) {
+                        doc.setTextColor(orangeColor[0], orangeColor[1], orangeColor[2]); // Naranja
+                    } else {
+                        doc.setTextColor(redColor[0], redColor[1], redColor[2]); // Rojo
+                    }
+                    
+                    doc.text(`${completionRate}%`, colPos.tasa + 10, yPosition + 7);
+                    doc.setTextColor(0, 0, 0); // Restaurar color
+                    
+                    yPosition += rowHeight;
+                    
+                    // Si llegamos al final de la página, crear una nueva
+                    if (yPosition > 260) {
+                        doc.addPage();
+                        yPosition = 20;
+                        
+                        // Repetir encabezados en la nueva página
+                        doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+                        doc.setTextColor(255, 255, 255);
+                        doc.rect(10, yPosition, 190, rowHeight, 'F');
+                        
+                        doc.text("Sucursal", colPos.sucursal + 5, yPosition + 7);
+                        doc.text("Total", colPos.total + 10, yPosition + 7);
+                        doc.text("Completas", colPos.completas + 5, yPosition + 7);
+                        doc.text("Incompletas", colPos.incompletas + 5, yPosition + 7);
+                        doc.text("% Comp.", colPos.tasa + 5, yPosition + 7);
+                        
+                        yPosition += rowHeight;
+                        doc.setTextColor(0, 0, 0);
+                        isAlternateRow = false;
+                    }
+                }
+            }
+            
+            // Título para la sección de detalle por operador
+            doc.addPage();
+            doc.setFontSize(16);
+            doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.text("DETALLE DE ASISTENCIA POR OPERADOR", 105, 20, { align: "center" });
+
+            doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+            doc.setLineWidth(0.5);
+            doc.line(10, 25, 200, 25);
+
+            // Verificar si existen detalles de operadores
+            if (!attendanceReportData.operators || attendanceReportData.operators.length === 0) {
+                doc.setFontSize(11);
+                doc.setTextColor(255, 0, 0);
+                doc.text("No hay datos de operadores disponibles", 105, 40, { align: "center" });
+            } else {
+                let yPosition = 35;
+                
+                // Para cada operador
+                for (const operator of attendanceReportData.operators) {
+                    // Si no hay espacio suficiente para un nuevo operador, crear nueva página
+                    if (yPosition > 250) {
+                        doc.addPage();
+                        yPosition = 20;
+                    }
+                    
+                    // Nombre del operador como encabezado
+                    doc.setFillColor(220, 220, 220);
+                    doc.rect(10, yPosition, 190, 10, 'F');
+                    
+                    doc.setFontSize(12);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(`Operador: ${operator.name} (ID: ${operator.id})`, 15, yPosition + 7);
+                    
+                    yPosition += 15;
+                    
+                    // Si no hay asistencias para este operador
+                    if (!operator.attendances || operator.attendances.length === 0) {
+                        doc.setFontSize(10);
+                        doc.setTextColor(100, 100, 100);
+                        doc.text("No hay registros de asistencia para este operador", 20, yPosition);
+                        yPosition += 10;
+                        continue;
+                    }
+                    
+                    // Encabezados de la tabla de asistencias
+                    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+                    doc.setTextColor(255, 255, 255);
+                    doc.rect(20, yPosition, 170, 8, 'F');
+                    
+                    // Definir anchos de columnas para la tabla de asistencias
+                    const attendanceColWidths = {
+                        fecha: 30,
+                        sucursal: 50,
+                        checkIn: 30,
+                        checkOut: 30,
+                        duracion: 30
+                    };
+                    
+                    // Posiciones X de las columnas
+                    const attendanceColPos = {
+                        fecha: 20,
+                        sucursal: attendanceColWidths.fecha + 20,
+                        checkIn: attendanceColWidths.fecha + attendanceColWidths.sucursal + 20,
+                        checkOut: attendanceColWidths.fecha + attendanceColWidths.sucursal + attendanceColWidths.checkIn + 20,
+                        duracion: attendanceColWidths.fecha + attendanceColWidths.sucursal + attendanceColWidths.checkIn + attendanceColWidths.checkOut + 20
+                    };
+                    
+                    doc.setFontSize(9);
+                    doc.text("Fecha", attendanceColPos.fecha + 5, yPosition + 5.5);
+                    doc.text("Sucursal", attendanceColPos.sucursal + 5, yPosition + 5.5);
+                    doc.text("Entrada", attendanceColPos.checkIn + 5, yPosition + 5.5);
+                    doc.text("Salida", attendanceColPos.checkOut + 5, yPosition + 5.5);
+                    doc.text("Duración", attendanceColPos.duracion + 5, yPosition + 5.5);
+                    
+                    yPosition += 8;
+                    
+                    // Filas de asistencias
+                    let isAlternateRow = false;
+                    
+                    for (const attendance of operator.attendances) {
+                        // Si no hay espacio para más filas, crear nueva página
+                        if (yPosition > 270) {
+                            doc.addPage();
+                            yPosition = 20;
+                            
+                            // Repetir encabezado de operador
+                            doc.setFillColor(220, 220, 220);
+                            doc.rect(10, yPosition, 190, 10, 'F');
+                            
+                            doc.setFontSize(12);
+                            doc.setTextColor(0, 0, 0);
+                            doc.text(`Operador: ${operator.name} (continuación)`, 15, yPosition + 7);
+                            
+                            yPosition += 15;
+                            
+                            // Repetir encabezados de tabla
+                            doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+                            doc.setTextColor(255, 255, 255);
+                            doc.rect(20, yPosition, 170, 8, 'F');
+                            
+                            doc.setFontSize(9);
+                            doc.text("Fecha", attendanceColPos.fecha + 5, yPosition + 5.5);
+                            doc.text("Sucursal", attendanceColPos.sucursal + 5, yPosition + 5.5);
+                            doc.text("Entrada", attendanceColPos.checkIn + 5, yPosition + 5.5);
+                            doc.text("Salida", attendanceColPos.checkOut + 5, yPosition + 5.5);
+                            doc.text("Duración", attendanceColPos.duracion + 5, yPosition + 5.5);
+                            
+                            yPosition += 8;
+                            isAlternateRow = false;
+                        }
+                        
+                        // Fondo para filas alternas
+                        if (isAlternateRow) {
+                            doc.setFillColor(240, 240, 240);
+                            doc.rect(20, yPosition, 170, 8, 'F');
+                        }
+                        isAlternateRow = !isAlternateRow;
+                        
+                        // Formatear fecha y horas
+                        const attendanceDate = attendance.date || 'N/A';
+                        const checkInTime = attendance.checkIn ? new Date(attendance.checkIn).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A';
+                        const checkOutTime = attendance.checkOut ? new Date(attendance.checkOut).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Pendiente';
+                        
+                        // Duración formateada (horas:minutos)
+                        let durationFormatted = 'N/A';
+                        if (attendance.duration !== null) {
+                            const hours = Math.floor(attendance.duration / 60);
+                            const minutes = attendance.duration % 60;
+                            durationFormatted = `${hours}h ${minutes}m`;
+                        }
+                        
+                        // Datos de la asistencia
+                        doc.setFontSize(8);
+                        doc.setTextColor(0, 0, 0);
+                        doc.text(attendanceDate, attendanceColPos.fecha + 5, yPosition + 5.5);
+                        
+                        // Nombre de sucursal (truncado si es muy largo)
+                        const branchName = attendance.branchName || 'N/A';
+                        const truncatedBranchName = branchName.length > 20 ? branchName.substring(0, 17) + '...' : branchName;
+                        doc.text(truncatedBranchName, attendanceColPos.sucursal + 5, yPosition + 5.5);
+                        
+                        doc.text(checkInTime, attendanceColPos.checkIn + 5, yPosition + 5.5);
+                        
+                        // Check-out con color
+                        if (attendance.isComplete) {
+                            doc.setTextColor(greenColor[0], greenColor[1], greenColor[2]); // Verde
+                        } else {
+                            doc.setTextColor(orangeColor[0], orangeColor[1], orangeColor[2]); // Naranja
+                        }
+                        doc.text(checkOutTime, attendanceColPos.checkOut + 5, yPosition + 5.5);
+                        doc.setTextColor(0, 0, 0); // Restaurar color
+                        
+                        // Duración
+                        doc.text(durationFormatted, attendanceColPos.duracion + 5, yPosition + 5.5);
+                        
+                        yPosition += 8;
+                    }
+                    
+                    // Espacio entre operadores
+                    yPosition += 10;
+                }
+            }
+        
+            // Pie de página en todas las páginas
+            try {
+                const totalPages = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= totalPages; i++) {
+                    doc.setPage(i);
+                    
+                    // Línea de pie de página
+                    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+                    doc.setLineWidth(0.5);
+                    doc.line(10, 280, 200, 280);
+                    
+                    // Texto de pie de página
+                    doc.setFontSize(8);
+                    doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+                    doc.text(`Arrow Connect - ${company?.name || 'Empresa'} - Reporte de Asistencia - ${new Date().toLocaleDateString()}`, 105, 287, { align: "center" });
+                    doc.text(`Página ${i} de ${totalPages}`, 190, 287, { align: "right" });
+                }
+                console.log("Pie de página agregado correctamente");
+            } catch (pageErr) {
+                console.error("Error agregando pie de página:", pageErr);
+            }
+            
+            // Guardar el PDF
+            const fileName = `Asistencias_${company?.name || 'Empresa'}_${attendanceStartDate.toISOString().split('T')[0]}_${attendanceEndDate.toISOString().split('T')[0]}.pdf`;
+            console.log("Guardando PDF con nombre:", fileName);
+            doc.save(fileName);
+            
+            setSuccessMessage("PDF de asistencia generado correctamente");
+            setTimeout(() => setSuccessMessage(""), 3000);
+        } catch (err) {
+            console.error('Error detallado al generar el PDF de asistencia:', err);
+            setErrorMessage(`Error al generar el PDF: ${err.message || 'Error desconocido'}`);
+            setTimeout(() => setErrorMessage(""), 5000);
+        }
+    };
+    
     useEffect(() => {
         const fetchUser = async () => {
             try {
@@ -742,8 +1203,16 @@ export default function BranchesPage() {
                                 onClick={openReportDialog}
                                 className="bg-green-600 text-white py-2 px-4 rounded-md mb-4 hover:bg-green-700 flex items-center">
                                 <FaFilePdf className="mr-2" />
-                                Generar Reporte
+                                Reporte de supervisión
                             </button>
+                            {company?.enabled && (
+                                <button
+                                    onClick={openAttendanceReportDialog}
+                                    className="bg-blue-600 text-white py-2 px-4 rounded-md mb-4 hover:bg-blue-700 flex items-center">
+                                    <FaFilePdf className="mr-2" />
+                                    Reporte de Asistencia
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -1135,6 +1604,137 @@ export default function BranchesPage() {
                                             <button
                                                 className="bg-green-600 text-white font-medium px-4 py-2 rounded-md hover:bg-green-700 flex items-center"
                                                 onClick={generatePDF}>
+                                                <FaFilePdf className="mr-2" />
+                                                Descargar PDF
+                                            </button>
+                                        )}
+                                    </div>
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
+                    </div>
+                </Dialog>
+            </Transition>
+
+            <Transition appear show={isAttendanceReportDialogOpen} as={Fragment}>
+                <Dialog
+                    as="div"
+                    className="relative z-10"
+                    onClose={closeAttendanceReportDialog}>
+                    <Transition.Child
+                        as={Fragment}
+                        enter="ease-out duration-300"
+                        enterFrom="opacity-0 scale-95"
+                        enterTo="opacity-100 scale-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100 scale-100"
+                        leaveTo="opacity-0 scale-95">
+                        <div className="fixed inset-0 bg-black bg-opacity-50" />
+                    </Transition.Child>
+
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4 text-center">
+                            <Transition.Child
+                                as={Fragment}
+                                enter="ease-out duration-300"
+                                enterFrom="opacity-0 scale-95"
+                                enterTo="opacity-100 scale-100"
+                                leave="ease-in duration-200"
+                                leaveFrom="opacity-100 scale-100"
+                                leaveTo="opacity-0 scale-95">
+                                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
+                                    <Dialog.Title
+                                        as="h3"
+                                        className="text-lg font-medium leading-6 text-white">
+                                        Generar Reporte de Asistencia
+                                    </Dialog.Title>
+                                    <div className="mt-4">
+                                        <div className="mb-4">
+                                            <label
+                                                className="block text-gray-300 mb-2"
+                                                htmlFor="attendanceStartDate">
+                                                Fecha de inicio
+                                            </label>
+                                            <div className="flex items-center">
+                                                <FaCalendarAlt className="text-gray-400 mr-2" />
+                                                <input
+                                                    type="date"
+                                                    id="attendanceStartDate"
+                                                    value={attendanceStartDate.toISOString().split('T')[0]}
+                                                    onChange={(e) => setAttendanceStartDate(new Date(e.target.value))}
+                                                    className="w-full px-4 py-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary"
+                                                    max={attendanceEndDate.toISOString().split('T')[0]}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="mb-4">
+                                            <label
+                                                className="block text-gray-300 mb-2"
+                                                htmlFor="attendanceEndDate">
+                                                Fecha de fin
+                                            </label>
+                                            <div className="flex items-center">
+                                                <FaCalendarAlt className="text-gray-400 mr-2" />
+                                                <input
+                                                    type="date"
+                                                    id="attendanceEndDate"
+                                                    value={attendanceEndDate.toISOString().split('T')[0]}
+                                                    onChange={(e) => setAttendanceEndDate(new Date(e.target.value))}
+                                                    className="w-full px-4 py-2 rounded-md bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary"
+                                                    min={attendanceStartDate.toISOString().split('T')[0]}
+                                                    max={new Date().toISOString().split('T')[0]}
+                                                />
+                                            </div>
+                                        </div>
+                                        
+                                        {attendanceReportData && (
+                                            <div className="mt-4 bg-gray-700 p-4 rounded-lg">
+                                                <h4 className="text-white font-medium mb-2">Resumen</h4>
+                                                <p className="text-gray-300">Total registros: {attendanceReportData.totalAttendances}</p>
+                                                <p className="text-gray-300">Registros completos: {attendanceReportData.completedAttendances}</p>
+                                                <p className="text-gray-300">Tasa de completitud: {attendanceReportData.completionRate}%</p>
+                                                <p className="text-gray-300">Operadores: {attendanceReportData.operators?.length || 0}</p>
+                                            </div>
+                                        )}
+                                        
+                                        {errorMessage && (
+                                            <div className="bg-red-500 text-white px-4 py-2 rounded-md mt-4">
+                                                {errorMessage}
+                                            </div>
+                                        )}
+                                        {successMessage && (
+                                            <div className="bg-green-500 text-white px-4 py-2 rounded-md mt-4">
+                                                {successMessage}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="mt-6 flex justify-end space-x-4">
+                                        <button
+                                            className="bg-gray-600 text-white font-medium px-4 py-2 rounded-md hover:bg-gray-500"
+                                            onClick={closeAttendanceReportDialog}>
+                                            Cancelar
+                                        </button>
+                                        {!attendanceReportData ? (
+                                            <button
+                                                className="bg-primary text-white font-medium px-4 py-2 rounded-md hover:bg-primary-dark flex items-center"
+                                                onClick={generateAttendanceReportData}
+                                                disabled={loadingAttendanceReport}>
+                                                {loadingAttendanceReport ? (
+                                                    <>
+                                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                        Generando...
+                                                    </>
+                                                ) : (
+                                                    'Generar Datos'
+                                                )}
+                                            </button>
+                                        ) : (
+                                            <button
+                                                className="bg-blue-600 text-white font-medium px-4 py-2 rounded-md hover:bg-blue-700 flex items-center"
+                                                onClick={generateAttendancePDF}>
                                                 <FaFilePdf className="mr-2" />
                                                 Descargar PDF
                                             </button>
