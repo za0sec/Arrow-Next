@@ -18,12 +18,21 @@ export default function RrhhNavbar({ user }) {
     const closeModal = () => setIsModalOpen(false);
 
     const handleLogout = () => {
+        // Obtener todas las cookies
         const allCookies = Cookies.get();
 
+        // Eliminar cada cookie individualmente
         Object.keys(allCookies).forEach(cookieName => {
-            Cookies.remove(cookieName);
+            Cookies.remove(cookieName, { path: '/' });
         });
 
+        // Limpiar también localStorage
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('savedEmail');
+
+        // Redireccionar a la página principal
         window.location.href = '/';
     };
 

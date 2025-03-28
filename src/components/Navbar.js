@@ -31,9 +31,6 @@ export default function Navbar({ openModal }) {
                             <button onClick={openModal} className="bg-primary text-white font-medium px-4 py-2 rounded-md hover:bg-secondary">
                                 Iniciar Sesión
                             </button>
-                            <button className="bg-gray-800 text-white font-medium px-4 py-2 rounded-md hover:bg-gray-700">
-                                Registrarse
-                            </button>
                     </div>
 
                     <div className="-mr-2 flex items-center md:hidden">
