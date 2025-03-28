@@ -15,10 +15,29 @@ export default function LoginModal({ isOpen, closeModal }) {
 
     useEffect(() => {
         const savedEmail = localStorage.getItem('savedEmail');
-        const savedPassword = localStorage.getItem('savedPassword');
         if (savedEmail) setEmail(savedEmail);
-        if (savedPassword) setPassword(savedPassword);
     }, []);
+
+    const saveTokens = (accessToken, refreshToken, role) => {
+        try {
+            // Guardamos en localStorage como respaldo
+            localStorage.setItem('refreshToken', refreshToken);
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('userRole', role);
+
+            // Intentamos guardar en cookies
+            document.cookie = `refreshToken=${refreshToken}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=Strict`;
+            document.cookie = `accessToken=${accessToken}; path=/; max-age=${24 * 60 * 60}; secure; samesite=Strict`;
+
+            console.log('Tokens guardados:', {
+                refresh: Cookies.get('refreshToken'),
+                access: Cookies.get('accessToken'),
+                localRefresh: localStorage.getItem('refreshToken')
+            });
+        } catch (error) {
+            console.error('Error guardando tokens:', error);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -33,35 +52,28 @@ export default function LoginModal({ isOpen, closeModal }) {
             if (response.status === 200) {
                 const { accessToken, refreshToken, role } = response.data;
 
-                // Verificar que el rol sea válido
                 if (role !== 'administrator' && role !== 'rrhh') {
                     setError('No tienes permisos para acceder al sistema');
                     return;
                 }
 
+                // Usar la nueva función para guardar tokens
+                saveTokens(accessToken, refreshToken, role);
                 localStorage.setItem('savedEmail', email);
-                localStorage.setItem('savedPassword', password);
-                // Guardar el rol en localStorage
-                localStorage.setItem('userRole', role);
-                
-                Cookies.set('accessToken', accessToken, { secure: true, sameSite: 'Strict' });
-                Cookies.set('refreshToken', refreshToken, { secure: true, sameSite: 'Strict' });
 
                 setSuccess('Inicio de sesión exitoso');
+                
+                const targetRoute = role === 'rrhh' ? '/rrhh/dni-management' : '/dashboard';
                 setTimeout(() => {
                     closeModal();
-                    // Redirigir según el rol
-                    if (role === 'rrhh') {
-                        router.push('/rrhh/dni-management');
-                    } else {
-                        router.push('/dashboard');
-                    }
+                    router.replace(targetRoute);
                 }, 2000);
             } else {
                 const errorData = response.data;
                 setError(errorData.message || 'Error al iniciar sesión');
             }
         } catch (error) {
+            console.error('Error en login:', error);
             if (error.response?.status === 403) {
                 setError('No tienes permisos para acceder al sistema');
             } else {

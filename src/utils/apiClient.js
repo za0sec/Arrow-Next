@@ -70,5 +70,34 @@ async function refreshAccessToken() {
     }
 }
 
+const refreshTokenSilently = async () => {
+    const refreshToken = Cookies.get('refreshToken');
+    if (!refreshToken) return;
+
+    try {
+        const response = await apiClient.post('/token', 
+            new URLSearchParams({ refreshToken }), 
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        );
+        
+        if (response.status === 200) {
+            const { accessToken, newRefreshToken, role } = response.data;
+            
+            Cookies.set('accessToken', accessToken, { secure: true, sameSite: 'Strict' });
+            Cookies.set('refreshToken', newRefreshToken, { secure: true, sameSite: 'Strict' });
+            localStorage.setItem('userRole', role);
+        }
+    } catch (error) {
+        console.error('Error refreshing token:', error);
+        Cookies.remove('accessToken');
+        Cookies.remove('refreshToken');
+        localStorage.removeItem('userRole');
+        router.replace('/');
+    }
+};
 
 export default apiClient;

@@ -13,21 +13,14 @@ export default function HeroSection({ openModal }) {
                     Arrow Connect garantiza una supervisión eficiente, registrando cada tarea y visita con la precisión adecuada para tu empresa.
                 </p>
                 <br/><br/>
-                <div className="mt-5 sm:mt-8 flex justify-start space-x-4">
+                <div className="mt-5 sm:mt-8 flex justify-start space-x-4 rounded-md">
                     <button
                         onClick={openModal}
                         className="bg-primary text-white font-medium px-6 py-2 rounded-md hover:bg-secondary"
                     >
                         Iniciar Sesión
                     </button>
-                    <div className="rounded-md shadow">
-                        <a
-                            href="#"
-                            className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-primary bg-gray-800 hover:bg-gray-700 md:py-4 md:text-lg md:px-10"
-                        >
-                            Registrarse
-                        </a>
-                    </div>
+                    
                 </div>
             </div>
             <div className="mt-10 lg:mt-0 lg:w-1/2 flex justify-center lg:justify-end">
