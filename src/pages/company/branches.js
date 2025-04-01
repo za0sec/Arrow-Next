@@ -575,7 +575,7 @@ export default function BranchesPage() {
     const handleToggleStarred = async () => {
         try {
             setIsStarring(true);
-            const response = await apiClient.post(`/api/company/toggle-starred/${companyId}`);
+            const response = await apiClient.post(`/company/toggle-starred/${companyId}`);
             
             // Actualizar el estado de la empresa
             setCompany(response.data.company);
@@ -613,7 +613,7 @@ export default function BranchesPage() {
             formData.append('image', selectedImage);
 
             const response = await apiClient.post(
-                `/api/company/upload-image/${companyId}`,
+                `/company/upload-image/${companyId}`,
                 formData,
                 {
                     headers: {
