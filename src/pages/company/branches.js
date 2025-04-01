@@ -44,6 +44,10 @@ export default function BranchesPage() {
     const [attendanceEndDate, setAttendanceEndDate] = useState(new Date()); // Hoy
     const [attendanceReportData, setAttendanceReportData] = useState(null);
     const [loadingAttendanceReport, setLoadingAttendanceReport] = useState(false);
+    const [isImageUploadDialogOpen, setIsImageUploadDialogOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [isStarring, setIsStarring] = useState(false);
     
     const openAttendanceReportDialog = () => {
         setIsAttendanceReportDialogOpen(true);
@@ -555,6 +559,78 @@ export default function BranchesPage() {
             fetchCompany();
         }
     }, [companyId]);
+
+    useEffect(() => {
+        if (selectedImage) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result);
+            };
+            reader.readAsDataURL(selectedImage);
+        } else {
+            setImagePreview(null);
+        }
+    }, [selectedImage]);
+
+    const handleToggleStarred = async () => {
+        try {
+            setIsStarring(true);
+            const response = await apiClient.post(`/api/company/toggle-starred/${companyId}`);
+            
+            // Actualizar el estado de la empresa
+            setCompany(response.data.company);
+            
+            // Si la empresa fue desmarcada como destacada, limpiar la imagen
+            if (!response.data.company.starred) {
+                setSelectedImage(null);
+                setImagePreview(null);
+            }
+            
+            setSuccessMessage(response.data.message);
+            
+            // Si la empresa fue marcada como destacada, abrir el diálogo de imagen
+            if (response.data.company.starred && !response.data.company.imagePath) {
+                setIsImageUploadDialogOpen(true);
+            }
+            
+        } catch (error) {
+            setErrorMessage(error.response?.data?.error || 'Error al cambiar estado destacado');
+        } finally {
+            setIsStarring(false);
+            setTimeout(() => setSuccessMessage(""), 3000);
+            setTimeout(() => setErrorMessage(""), 3000);
+        }
+    };
+
+    const handleImageUpload = async () => {
+        if (!selectedImage) {
+            setErrorMessage('Por favor selecciona una imagen');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('image', selectedImage);
+
+            const response = await apiClient.post(
+                `/api/company/upload-image/${companyId}`,
+                formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+
+            setCompany(response.data.company);
+            setSuccessMessage('Imagen subida exitosamente');
+            setIsImageUploadDialogOpen(false);
+            setSelectedImage(null);
+            setImagePreview(null);
+        } catch (error) {
+            setErrorMessage(error.response?.data?.error || 'Error al subir la imagen');
+        }
+    };
 
     const openDialog = (
         branch = { id: "", name: "", address: "", density: "", frequency: "" }
@@ -1149,7 +1225,9 @@ export default function BranchesPage() {
             <DashboardNavbar user={user} />
             <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 mt-16">
                 {/* Banner de estado de la empresa */}
-                <div className={`mb-4 flex items-center justify-between p-3 rounded-lg ${
+                <div className="flex flex-col gap-4 mb-4">
+                    {/* Banner de estado de la empresa */}
+                    <div className={`flex items-center justify-between p-3 rounded-lg ${
                         company?.enabled ? 'bg-green-800/20' : 'bg-yellow-800/20'
                     }`}>
                         <span className={`text-sm ${
@@ -1181,6 +1259,51 @@ export default function BranchesPage() {
                             )}
                         </button>
                     </div>
+
+                    {/* Banner de empresa destacada */}
+                    <div className={`flex items-center justify-between p-3 rounded-lg ${
+                        company?.starred ? 'bg-yellow-600/20' : 'bg-gray-800'
+                    }`}>
+                        <div className="flex items-center gap-3">
+                            {company?.imagePath && (
+                                <img 
+                                    src={`${process.env.NEXT_PUBLIC_API_URL}/${company.imagePath}`}
+                                    alt="Logo empresa"
+                                    className="h-8 w-8 rounded-full object-cover"
+                                />
+                            )}
+                            <span className="text-sm text-white">
+                                {company?.starred 
+                                    ? 'Empresa destacada' 
+                                    : 'Marcar como empresa destacada'
+                                }
+                            </span>
+                        </div>
+                        <button
+                            onClick={handleToggleStarred}
+                            disabled={isStarring}
+                            className={`text-white text-sm py-1 px-3 rounded-md flex items-center gap-2 transition-colors ${
+                                company?.starred 
+                                    ? 'bg-yellow-600/30 hover:bg-yellow-600/40' 
+                                    : 'bg-gray-700 hover:bg-gray-600'
+                            }`}>
+                            {isStarring ? (
+                                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            ) : (
+                                <svg 
+                                    className={`h-5 w-5 ${company?.starred ? 'text-yellow-400' : 'text-gray-400'}`}
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                            )}
+                            {company?.starred ? 'Quitar destacado' : 'Destacar'}
+                        </button>
+                    </div>
+                </div>
                 <div className="bg-gray-800 p-6 rounded-lg shadow-lg mb-10">
                     <h1 className="text-4xl font-bold text-white mb-4">
                         Gestión de Sucursales de {company?.name}
@@ -1739,6 +1862,105 @@ export default function BranchesPage() {
                                                 Descargar PDF
                                             </button>
                                         )}
+                                    </div>
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
+                    </div>
+                </Dialog>
+            </Transition>
+
+            {/* Agregar el diálogo de subida de imagen */}
+            <Transition appear show={isImageUploadDialogOpen} as={Fragment}>
+                <Dialog
+                    as="div"
+                    className="relative z-10"
+                    onClose={() => setIsImageUploadDialogOpen(false)}>
+                    <Transition.Child
+                        as={Fragment}
+                        enter="ease-out duration-300"
+                        enterFrom="opacity-0"
+                        enterTo="opacity-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0">
+                        <div className="fixed inset-0 bg-black bg-opacity-50" />
+                    </Transition.Child>
+
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4 text-center">
+                            <Transition.Child
+                                as={Fragment}
+                                enter="ease-out duration-300"
+                                enterFrom="opacity-0 scale-95"
+                                enterTo="opacity-100 scale-100"
+                                leave="ease-in duration-200"
+                                leaveFrom="opacity-100 scale-100"
+                                leaveTo="opacity-0 scale-95">
+                                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
+                                    <Dialog.Title
+                                        as="h3"
+                                        className="text-lg font-medium leading-6 text-white mb-4">
+                                        Subir imagen de empresa destacada
+                                    </Dialog.Title>
+                                    
+                                    <div className="mt-4">
+                                        <div className="flex flex-col items-center justify-center gap-4">
+                                            {imagePreview ? (
+                                                <div className="relative">
+                                                    <img
+                                                        src={imagePreview}
+                                                        alt="Preview"
+                                                        className="w-32 h-32 rounded-lg object-cover"
+                                                    />
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedImage(null);
+                                                            setImagePreview(null);
+                                                        }}
+                                                        className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hover:bg-red-600">
+                                                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center">
+                                                    <label className="w-32 h-32 flex flex-col items-center justify-center border-2 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-gray-500 transition-colors">
+                                                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                                                        </svg>
+                                                        <span className="mt-2 text-sm text-gray-400">Seleccionar imagen</span>
+                                                        <input
+                                                            type="file"
+                                                            className="hidden"
+                                                            accept="image/*"
+                                                            onChange={(e) => setSelectedImage(e.target.files[0])}
+                                                        />
+                                                    </label>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {errorMessage && (
+                                            <div className="mt-4 bg-red-500/20 text-red-400 px-4 py-2 rounded-md">
+                                                {errorMessage}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="mt-6 flex justify-end space-x-4">
+                                        <button
+                                            className="bg-gray-600 text-white font-medium px-4 py-2 rounded-md hover:bg-gray-500"
+                                            onClick={() => setIsImageUploadDialogOpen(false)}>
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            className="bg-primary text-white font-medium px-4 py-2 rounded-md hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed"
+                                            onClick={handleImageUpload}
+                                            disabled={!selectedImage}>
+                                            Subir imagen
+                                        </button>
                                     </div>
                                 </Dialog.Panel>
                             </Transition.Child>
