@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import DashboardNavbar from '@/components/DashboardNavbar';
@@ -6,7 +7,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import apiClient from "@/utils/apiClient";
 import LoadingSpinner from "@/components/LoadingSpinner";
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaChevronDown } from 'react-icons/fa';
 
 export default function AttendancePage() {
     const router = useRouter();
@@ -19,6 +20,9 @@ export default function AttendancePage() {
     const [totalPages, setTotalPages] = useState(1);
     const [user, setUser] = useState(null);
     const [allCompanies, setAllCompanies] = useState([]);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedBranch, setSelectedBranch] = useState(null);
+    const [expandedBranchId, setExpandedBranchId] = useState(null);
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -127,6 +131,40 @@ export default function AttendancePage() {
         <div className="min-h-screen bg-gray-900">
             <DashboardNavbar user={user} />
             
+            {/* Modal de operarios */}
+            {modalOpen && selectedBranch && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+                    <div className="bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md relative">
+                        <button
+                            className="absolute top-2 right-2 text-gray-400 hover:text-white text-2xl font-bold"
+                            onClick={() => setModalOpen(false)}
+                        >
+                            ×
+                        </button>
+                        <h2 className="text-xl font-semibold text-white mb-4">Operarios en {selectedBranch.name}</h2>
+                        {selectedBranch.operatorNames && selectedBranch.operatorNames.length > 0 ? (
+                            <ul className="divide-y divide-gray-700">
+                                {selectedBranch.operatorNames.map((name, idx) => (
+                                    <li key={idx} className="py-2 flex flex-col">
+                                        <span className="text-white font-medium">{name}</span>
+                                        <span className="text-xs text-gray-400">
+                                            Llegada: {selectedBranch.lastCheckIns && selectedBranch.lastCheckIns[idx] ? format(new Date(selectedBranch.lastCheckIns[idx]), 'HH:mm', { locale: es }) : '-'}
+                                        </span>
+                                        {selectedBranch.lastCheckOuts && selectedBranch.lastCheckOuts[idx] ? (
+                                            <span className="text-xs text-gray-400">
+                                                Salida: {format(new Date(selectedBranch.lastCheckOuts[idx]), 'HH:mm', { locale: es })}
+                                            </span>
+                                        ) : null}
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <div className="text-gray-400">No hay operarios registrados.</div>
+                        )}
+                    </div>
+                </div>
+            )}
+            
             <main className="px-4 sm:px-6 lg:px-8 py-8">
                 <div className="sm:flex sm:items-center">
                     <div className="sm:flex-auto">
@@ -195,44 +233,69 @@ export default function AttendancePage() {
                                 <tbody className="divide-y divide-gray-700">
                                     {branches.length > 0 ? (
                                         branches.map((branch) => (
-                                            <tr key={branch.id} className="hover:bg-gray-700 transition-colors">
-                                                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-200">
-                                                    {branch.companyName}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-200">
-                                                    {branch.name}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-200">
-                                                    {branch.address}
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm">
-                                                    <span
-                                                        className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                                                            branch.hasAttendance
-                                                                ? 'bg-green-100 text-green-800'
-                                                                : 'bg-red-100 text-red-800'
-                                                        }`}
-                                                    >
-                                                        {branch.hasAttendance ? 'Activo' : 'Sin operarios'}
-                                                    </span>
-                                                </td>
-                                                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-200">
-                                                    {branch.hasAttendance ? (
-                                                        <ul>
-                                                            {branch.operatorNames.map((name, idx) => (
-                                                                <li key={idx} className="flex items-center space-x-2">
-                                                                    <span>• {name}</span>
-                                                                    <span className="text-xs text-gray-400">
-                                                                        {format(new Date(branch.lastCheckIns[idx]), 'HH:mm', { locale: es })}
-                                                                    </span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    ) : (
-                                                        '-'
-                                                    )}
-                                                </td>
-                                            </tr>
+                                            <React.Fragment key={branch.id}>
+                                                <tr
+                                                    className={`transition-colors cursor-pointer hover:bg-gray-700`}
+                                                    onClick={() => setExpandedBranchId(expandedBranchId === branch.id ? null : branch.id)}
+                                                >
+                                                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm text-gray-200 flex items-center gap-2">
+                                                        <FaChevronDown
+                                                            className={`transition-transform duration-200 ${expandedBranchId === branch.id ? 'rotate-180' : ''}`}
+                                                        />
+                                                        {branch.companyName}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-200">
+                                                        {branch.name}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-200">
+                                                        {branch.address}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                                        <span
+                                                            className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+                                                                branch.hasAttendance
+                                                                    ? 'bg-green-100 text-green-800'
+                                                                    : 'bg-red-100 text-red-800'
+                                                            }`}
+                                                        >
+                                                            {branch.hasAttendance ? 'Activo' : 'Sin operarios'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-200">
+                                                        {branch.hasAttendance ? (
+                                                            <span className="text-blue-400">{branch.operatorNames.length} operarios</span>
+                                                        ) : (
+                                                            '-'
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                                {expandedBranchId === branch.id && (
+                                                    <tr className="bg-gray-800">
+                                                        <td colSpan="5" className="px-6 py-4">
+                                                            <h3 className="text-white font-semibold mb-2">Operarios en {branch.name}</h3>
+                                                            {branch.operators && branch.operators.length > 0 ? (
+                                                                <ul className="divide-y divide-gray-600">
+                                                                    {branch.operators.map((op, idx) => (
+                                                                        <li key={idx} className="py-2 flex flex-col sm:flex-row sm:items-center sm:space-x-4">
+                                                                            <span className="text-white font-medium">{op.name}</span>
+                                                                            <span className="text-xs text-gray-400">
+                                                                                Llegada: {op.checkIn ? format(new Date(op.checkIn), 'HH:mm', { locale: es }) : '-'}
+                                                                            </span>
+                                                                            {op.checkOut ? (
+                                                                                <span className="text-xs text-gray-400">
+                                                                                    Salida: {format(new Date(op.checkOut), 'HH:mm', { locale: es })}
+                                                                                </span>
+                                                                            ) : null}
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            ) : (
+                                                                <div className="text-gray-400">No hay operarios registrados.</div>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
                                         ))
                                     ) : (
                                         <tr>
