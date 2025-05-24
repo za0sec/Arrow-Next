@@ -94,6 +94,7 @@ const Reports = () => {
 
     const handleApprove = (report) => {
         setSelectedReport(report);
+        console.log(new Date(report.date).toLocaleString());
         setIsModalOpen(true);
     };
 
@@ -119,7 +120,8 @@ const Reports = () => {
             
             const formData = new FormData();
             formData.append('id', selectedReport.branch.id);
-            formData.append('date', new Date().toISOString().split('T')[0]);
+            formData.append('date', selectedReport.date.split('T')[0]);
+            console.log(selectedReport.date.split('T')[0]);
             formData.append('report', selectedReport.report);
             formData.append('name', `${user.firstName} ${user.lastName}`);
             formData.append('reportId', selectedReport.id);

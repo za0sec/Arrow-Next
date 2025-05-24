@@ -263,7 +263,9 @@ export default function AttendancePage() {
                                                     </td>
                                                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-200">
                                                         {branch.hasAttendance ? (
-                                                            <span className="text-blue-400">{branch.operatorNames.length} operarios</span>
+                                                            <span className="text-blue-400">
+                                                                {branch.operators.filter(op => !op.checkOut).length} operarios presentes
+                                                            </span>
                                                         ) : (
                                                             '-'
                                                         )}
@@ -274,21 +276,44 @@ export default function AttendancePage() {
                                                         <td colSpan="5" className="px-6 py-4">
                                                             <h3 className="text-white font-semibold mb-2">Operarios en {branch.name}</h3>
                                                             {branch.operators && branch.operators.length > 0 ? (
-                                                                <ul className="divide-y divide-gray-600">
-                                                                    {branch.operators.map((op, idx) => (
-                                                                        <li key={idx} className="py-2 flex flex-col sm:flex-row sm:items-center sm:space-x-4">
-                                                                            <span className="text-white font-medium">{op.name}</span>
-                                                                            <span className="text-xs text-gray-400">
-                                                                                Llegada: {op.checkIn ? format(new Date(op.checkIn), 'HH:mm', { locale: es }) : '-'}
-                                                                            </span>
-                                                                            {op.checkOut ? (
-                                                                                <span className="text-xs text-gray-400">
-                                                                                    Salida: {format(new Date(op.checkOut), 'HH:mm', { locale: es })}
-                                                                                </span>
-                                                                            ) : null}
-                                                                        </li>
-                                                                    ))}
-                                                                </ul>
+                                                                <div className="space-y-6">
+                                                                    {/* Operarios Presentes */}
+                                                                    <div>
+                                                                        <h4 className="text-sm font-medium text-green-400 mb-2">Operarios Presentes</h4>
+                                                                        <ul className="divide-y divide-gray-600">
+                                                                            {branch.operators
+                                                                                .filter(op => !op.checkOut)
+                                                                                .map((op, idx) => (
+                                                                                    <li key={idx} className="py-2 flex flex-col sm:flex-row sm:items-center sm:space-x-4">
+                                                                                        <span className="text-white font-medium">{op.name}</span>
+                                                                                        <span className="text-xs text-gray-400">
+                                                                                            Llegada: {op.checkIn ? format(new Date(op.checkIn), 'HH:mm', { locale: es }) : '-'}
+                                                                                        </span>
+                                                                                    </li>
+                                                                                ))}
+                                                                        </ul>
+                                                                    </div>
+
+                                                                    {/* Operarios que ya se fueron */}
+                                                                    <div>
+                                                                        <h4 className="text-sm font-medium text-yellow-400 mb-2">Turnos finalizados</h4>
+                                                                        <ul className="divide-y divide-gray-600">
+                                                                            {branch.operators
+                                                                                .filter(op => op.checkOut)
+                                                                                .map((op, idx) => (
+                                                                                    <li key={idx} className="py-2 flex flex-col sm:flex-row sm:items-center sm:space-x-4">
+                                                                                        <span className="text-white font-medium">{op.name}</span>
+                                                                                        <span className="text-xs text-gray-400">
+                                                                                            Llegada: {op.checkIn ? format(new Date(op.checkIn), 'HH:mm', { locale: es }) : '-'}
+                                                                                        </span>
+                                                                                        <span className="text-xs text-gray-400">
+                                                                                            Salida: {format(new Date(op.checkOut), 'HH:mm', { locale: es })}
+                                                                                        </span>
+                                                                                    </li>
+                                                                                ))}
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
                                                             ) : (
                                                                 <div className="text-gray-400">No hay operarios registrados.</div>
                                                             )}
